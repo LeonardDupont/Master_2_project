@@ -86,11 +86,11 @@ N = 5 ; %concatenation group size
 
 concatenate_mukamel(N,input_concatenate,output_concatenate)
 
-%% Median filtering (Diogo) : removing the shutter noise (horizontal ICAs) by sacrifying temporal precision at first (3-frames sliding window)
+%% Median filtering (Diogo) : removing the shutter noise by sacrifying temporal precision at first (3-frames sliding window)
 
+input_median = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5\MC318_26_218_F_tied_138,000_137,000_5__concatenated_trials_1_25_27_51.tif'; 
 
-
-
+[~] = med_filter_calcium(input_median); 
 
 %%
 % extract rois using mukamel
@@ -99,33 +99,35 @@ options.nPCs = 400;
 options.used_PCs = 1:350; % if this value is empty the algorithm prompts the user for manual selection
 options.mu = 0.5;
 
-cells_sort_file = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5\MC318_26_218_F_tied_138,000_137,000_5__concatenated_trials_1_25_27_51.tif';
+cells_sort_file_muk = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5\MC318_26_218_F_tied_138,000_137,000_5__concatenated_trials_1_25_27_51_MEDFILT.tif';
+cells_sort_file_reg = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5\MC318_26_218_F_tied_138,000_137,000_5__concatenated_trials_1_25_27_51.tif'; 
 cells_sort_out_folder = 'Z:\leonard.dupont\TM IMAGING PROCESSING FILES\voluntary locomotion\MC318\S5\mukamel_concatenated2';
 create_folder_path(cells_sort_out_folder);
 
 
-muk = get_mukamel_rois(cells_sort_file, [], options.nPCs, options.used_PCs, options.mu, []);
+muk = get_mukamel_rois(cells_sort_file_muk, [], options.nPCs, options.used_PCs, options.mu, []);
 
 % convert mukamel rois to carey neuron
 cn_rois = convert_mukamel_to_carey_neuron(muk.ica_segments, muk.seg_centroid);
 
 
 % add bkg rois
-[bkg,~] = draw_manual_rois(cells_sort_file,[],[],[],[1,500]);
+[bkg,~] = draw_manual_rois(cells_sort_file_reg,[],[],[],[1,500]);
 cn_bkg_rois = convert_manual_rois_to_carey_neuron(bkg);
 
 
-% compute avg intensities for rois and background, and save data
-[~, frame_avg, cn] = get_carey_neurons_mean_intensity(cells_sort_file, cn_rois, [cells_sort_out_folder,'\','carey_neurons.mat']);
-[~, ~, cn_bkg] = get_carey_neurons_mean_intensity(cells_sort_file, cn_bkg_rois, [cells_sort_out_folder,'\','carey_neurons_bkg.mat']);
+% compute avg intensities for rois and background, and save data : done on
+% the non-filtered tiff file so that we do not loose temp. resolution
+[~, frame_avg, cn] = get_carey_neurons_mean_intensity(cells_sort_file_reg, cn_rois, [cells_sort_out_folder,'\','carey_neurons.mat']);
+[~, ~, cn_bkg] = get_carey_neurons_mean_intensity(cells_sort_file_reg, cn_bkg_rois, [cells_sort_out_folder,'\','carey_neurons_bkg.mat']);
 
 %plot the calcium traces
 plot_all_traces(cn)
 
-data = load('Z:\hugo.marques\LocomotionExperiments\RT Self-paced\Imaging\TM IMAGING PROCESSING FILES\voluntary locomotion\MC318\S2\mukamel concatenated\carey_neurons.mat');
+data = load('Z:\leonard.dupont\TM IMAGING PROCESSING FILES\voluntary locomotion\MC318\S5\mukamel_concatenated2\carey_neurons.mat');
 cn = data.cn;
 
-data_bkg = load('Z:\hugo.marques\LocomotionExperiments\RT Self-paced\Imaging\TM IMAGING PROCESSING FILES\voluntary locomotion\MC318\S2\mukamel concatenated\carey_neurons_bkg.mat');
+data_bkg = load('Z:\leonard.dupont\TM IMAGING PROCESSING FILES\voluntary locomotion\MC318\S5\mukamel_concatenated2\carey_neurons_bkg.mat');
 cn_bkg = data_bkg.cn;
 
 
@@ -138,8 +140,8 @@ ops.estimateNeuropil = 1;
 ops.deconvType = 'L0'; 
 %ops.deconvType = 'OASIS';
 threshold = 1000;
-
 [~, ~, cn] = get_spikes_from_calcium_traces(cn.intensity, ops, threshold, cn, []);
+
 
 %% Process mukamel ROIs with CNFM to demix and then deconvolve
 % DEMIXING TO BE DONE
@@ -147,10 +149,10 @@ threshold = 1000;
 %% a : selecting single spike events
 % we must first use a nice calcium recording vector from which we'll select
 % single spike events. In this way, MLSpike will autocalibrate. 
-
-roi = 3; %check with the plot_all_traces function
-%good_trace = cn(:,roi);
-good_trace = very_good;
+calcium_data = cn.intensity; 
+calcium_data = calcium_data(:,1:142); 
+roi = 13; %check with the plot_all_traces function
+good_trace = calcium_data(:,roi);
 [pks,locs] = define_single_events(good_trace);
 
 %%
