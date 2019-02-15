@@ -11,6 +11,10 @@ function   [pks,locs] = define_single_events(calcium_data)
     too_high = find(pks > 0.7*max(calcium_data));
     pks(too_high) = [];
     locs(too_high) = [];
+    
+    if isempty(pks)
+        error('No single events detected in this ROI. Increase threshold or choose another one')
+    end
  
  %% user-based selection
  

@@ -142,16 +142,17 @@ ops.deconvType = 'L0';
 threshold = 1000;
 [~, ~, cn] = get_spikes_from_calcium_traces(cn.intensity, ops, threshold, cn, []);
 
-
 %% Process mukamel ROIs with CNFM to demix and then deconvolve
 % DEMIXING TO BE DONE
+
+
+
 %% Giving a go to the MLSpike algorithm (Deneux et al. 2016) https://www.nature.com/articles/ncomms12190
 %% a : selecting single spike events
 % we must first use a nice calcium recording vector from which we'll select
 % single spike events. In this way, MLSpike will autocalibrate. 
-calcium_data = cn.intensity; 
-calcium_data = calcium_data(:,1:142); 
-roi = 13; %check with the plot_all_traces function
+calcium_data = cn.intensity;  
+roi = 15; %check with the plot_all_traces function
 good_trace = calcium_data(:,roi);
 [pks,locs] = define_single_events(good_trace);
 
@@ -162,7 +163,7 @@ sspike_events = select_single_spikes(locs);
 %% b : now we feed the autocalibration and deconvolute the signals 
 clear deconvolution
 clear par
-[x,y] = size(cn);
+[x,y] = size(calcium_data);
 
 
 % autocalibration
@@ -174,8 +175,7 @@ pax.amin = 0.003;
 pax.amax = 1;
 pax.taumin = 0.1;
 pax.taumax = 1.8;
-pax.saturation = 7e-4; %GCaMP6f
-pax.realspikes = sspike_events*pax.dt; %the transients we deem as representative of sspike events (see above)
+pax.realspikes = sspike_events*1/30; %the transients we deem as representative of sspike events (see above)
 pax.mlspikepar.dographsummary = false;
 
 [tauest, aest, sigmaest] = spk_autocalibration(calcium_norm,pax);
@@ -187,32 +187,47 @@ par = tps_mlspikes('par');
 par.a = aest;
 par.dt = 1/30;
 par.tau = tauest;
-par.drift.parameter = 0.0001;
+par.drift.parameter = 0.001;
+p2 = 0.5;
+p3 = 0.01;
+par.pnonlin = [p2 p3] ;
 par.dographsummary = false;
-%par.finetune.sigma = sigmaest; to be left empty from my experience, even
+par.finetune.sigma = sigmaest; %to be left empty from my experience, even
 %though we estimated it 
 
 
-for roi=1:y 
+for roi=1:185
+    disp(['Processing ROI ' , num2str(roi)])
     [spk, fit, drift, parest] = spk_est(calcium_data(:,roi),par); 
     deconvolution.(['roi_',num2str(roi)]).spiketimes = spk;  %we store everything in a big struct with rois as subfields
     deconvolution.(['roi_',num2str(roi)]).fit = fit;
-    %deconvolution.(['roi_',num2str(roi)]).drift = drift; 
-    deconvolution.(['roi_',num2str(roi)]).sigma = parest.finetune.sigma; 
+    deconvolution.(['roi_',num2str(roi)]).mask = cn.mask{1,roi};
+    deconvolution.(['roi_',num2str(roi)]).centroid = cn.centroid{1,roi}; %important for the spatial rasterplot 
+    deconvolution.(['roi_',num2str(roi)]).raw_trace = calcium_data(:,roi);
 end
 
-
+%%
 % visualisation
 
-roi = 3; %choose the region (can eventually be looped if we want to check them all)
+roi=29; %choose the region (can eventually be looped if we want to check them all)
 spike_times = deconvolution.(['roi_',num2str(roi)]).spiketimes; 
 spk_display(par.dt,spike_times,calcium_data(:,roi))
 
 %% c : build ISI histogram
 
-[~] = build_ISI_histo(deconvolution,'individual',0,'bw',0.2);
+[~] = build_ISI_histo(deconvolution,'individual',0,'bw',0.01,'rmhigh',4);
+
+%% d : build rasterplot 
+
+rasterplot(deconvolution)
+%%
+
+tiffimage = '/Users/leonarddupont/Desktop/M2_internship/registration_template.tif';
+
+[spatial] = spatial_rasterplot(tiffimage,deconvolution,5); 
 
 
+%% 
 %% 3. Process session data
 
 session_raw_dir = 'Z:\hugo.marques\LocomotionExperiments\RT Self-paced\Imaging\TM RAW FILES\voluntary locomotion\MC318\S4';

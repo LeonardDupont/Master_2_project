@@ -22,12 +22,16 @@ ip.addParameter('dt',dt, @isscalar); %the framerate if different from the defaul
 ip.addParameter('individual',0); %if you feed the function with the struct but you want to calculate separate histograms for each ROI
 ip.addParameter('graphics',1); %if you want to plot the histogram or not (might no want to if individual is 1)
 ip.addParameter('bw',0.1, @double); %the bin width in the histogram
+ip.addParameter('color','k')
+ip.addParameter('rmhigh',[])
 parse(ip, varargin{:});
 
 dt = ip.Results.dt;
 individual = logical(ip.Results.individual);
 graphics = logical(ip.Results.graphics);
 bw = ip.Results.bw;
+colour = ip.Results.color;
+rmhigh = ip.Results.rmhigh;
 
 %% 
 if isstruct(data) %then it is a deconvolution-like struct 
@@ -45,6 +49,11 @@ if isstruct(data) %then it is a deconvolution-like struct
                 interspike(t) = 1/(spike_times(t+1) - spike_times(t));
             end
             
+                            if ~isempty(rmhigh)
+                                artefacts = find(interspike > rmhigh);
+                                interspike(artefacts) = [];
+                            end
+            
             if graphics
                 figure; hold on
                 title(['ISI histogram for ROI ', num2str(roi)])
@@ -52,7 +61,7 @@ if isstruct(data) %then it is a deconvolution-like struct
                  xlabel('Hz bin')
             end
             
-            [N,edges] = histcounts(interspike,'BinWidth',bw);
+            [N,edges] = histcounts(interspike,'BinWidth',bw,'FaceColor',colour,'Normalization','probability');
             
         end
         
@@ -66,11 +75,17 @@ if isstruct(data) %then it is a deconvolution-like struct
                 ISI = 1/(spike_times(t+1) - spike_times(t));
                 interspike = [interspike, ISI]; 
             end
+            
+                            if ~isempty(rmhigh)
+                                artefacts = find(interspike > rmhigh);
+                                interspike(artefacts) = [];
+                            end 
+            
         end
         if graphics
             figure; hold on
             title('ISI histogram all ROIs')
-            histogram(interspike,'BinWidth',bw)
+            histogram(interspike,'BinWidth',bw,'FaceColor',colour,'Normalization','probability')
              xlabel('Hz bin')
         end
         
@@ -85,10 +100,16 @@ else
         interspike(t) = 1/(data(t+1)-data(t));
     end
     
+                            if ~isempty(rmhigh)
+                                artefacts = find(interspike > rmhigh);
+                                interspike(artefacts) = [];
+                            end
+    
+    
     if graphics
             figure; hold on
             title('ISI histogram')
-            histogram(interspike,'BinWidth',bw)
+            histogram(interspike,'BinWidth',bw,'FaceColor',colour,'Normalization','probability')
             xlabel('Hz bin')
     end   
     
@@ -98,7 +119,7 @@ end
 
 max_bin = find(N == max(N));
 average_spkrate = edges(max_bin); %we find the class
-disp(num2str(average_spkrate))
+disp(['Max bin is for ',num2str(average_spkrate), ' Hz'])
 
 end
 
