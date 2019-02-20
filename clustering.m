@@ -4,6 +4,7 @@
 % so there is no demixing yet. We will then try the pixel-based method,
 % which should be much faster. 
 
+%% normalise and bring back to baseline (0)
 
 zm_calcium_data = zero_and_mean(calcium_data); 
 [datapoints,rois] = size(zm_calcium_data);
@@ -118,8 +119,10 @@ for N = 1:N_clusters %now we will loop through each cluster
                         jointhem = union(meta1,meta2);
                         frequencies.(['clst_',num2str(N)]).merged = union(frequencies.(['clst_',num2str(N)]).merged,jointhem);
                     end
+                else
+                    warning(message(['No field "metacluster" for cluster ', num2str(N), ' and samples ', num2str(sample1), ' or ', num2str(sample2) '.'])
                 end
-
+ 
             end
 
         end    
