@@ -1,51 +1,138 @@
+%% APPLYING CNMF-E POST MUKAMEL - February 2019, Carey lab -- leonard.dupont@ens.fr
+%
+%   Part 1 : creating CNMF-E - compatible objects 
+%   Part 2 : CNMF-E by Zhou et al.
+%
 %% 1 - building initialisation inputs from the mukamel algorithm
-% Right after running mukamel, we have a 'cn' and a 'cn_bkg' struct. 
+% Right after running Mukamel, we have a 'cn' and a 'cn_bkg' struct. 
 % The CNMF-E algorithm needs the following inputs to run:
 %
-%   A       d * K matrix (spatial components)
-%   b       d * 1 matrix (background component)
+%   A       d * K matrix (spatial components, unwrapped frames)
+%   b       d * 1 matrix (background component, unwrapped frame)
 %   C       K * T matrix (temporal components)
 %   f       T * 1 matrix (background temporal info)
 %   center  K * 2 matrix (centroid coordinates {x,y} forall K)
 % 
-% We will build this from our structs. 
+% We will build this from our structs in this part. 
 
 filepath = '/Users/leonarddupont/Desktop/M2_internship/[Clustering] Figures_and_docs/MC318_26_218_F_tied_138,000_137,000_5_1_m_Ready.tif';
-Y = imread_tifflib(filepath);
-T = ndim(Y);
+Y = imread_tifflib(filepath); %fast
+[d1,d2,d3] = size(Y);
+%Y = Y - min(Y(:));
+T = d3;
 
-%% preprocess data : get parameters
+%% a. preprocess data : get parameters
 p = 2; %order of the autoregressive model
-[Y,P] = preprocess_data(Y,p);
+[Y,P] = preprocess_data(Y,p); %seems necessary to get P, can also take a look at its format and build it myself
 
-%% we must now build a sparse matrix Ain corresponsing to the ROI landscapes
-% we them extracted using Mukamel (2009). 
+%% b. building a sparse matrix (Ain) for spatial components
 K = cn.n_cells;
-d1 = cn.fov_height;
-d2 = cn.fov_width;
 d = d1*d2;
+A = zeros(d,K); 
 
-A = zeros(d,K);
 for roi = 1:K
     S = cn.roi_landscape{1,roi};
     S = reshape(S,[d 1]); 
     A(:,roi) = S;
 end
 
-Ain = sparse(A);
-%% we can now also build Cin, which is far simpler
-Cin = zeros(K,T);
+Ain = sparse(A); %for storage
+
+%% c. building (Cin) and (center) for temporal components and ROI {x,y}
+
+Cin = zeros(K,T); %temporal components : fluorescent trace
+center = zeros(K,2); %centroids
+
 for roi = 1:K
-    Cin(:,roi) = cn.intensity{1,roi};
+    Cin(roi,:) = (cn.intensity(:,roi)).';
+    centroid = cn.centroid{1,roi};
+    center(roi,1) = centroid(1,1);
+    center(roi,2) = centroid(1,2);
 end
 
-%% Final step : estimation of background noise and fluorescence
+%% d. estimating background components (in space and time) using NMF
 
-Y = reshape(Y,numel(Y)/T,T); %now a d * T matrix
+Yr = reshape(Y,numel(Y)/T,T); %now a d * T matrix
 medY = median(Y,2); %median of the tiff stack over time 
 Y = bsxfun(@minus, Y, medY); %we remove the median 
-nb = 1; %1 background matrix
+nb = 1; %1 bkg component
 
 
 [bin,fin] = nmf(max(Y - Ain*Cin + repmat(medY,1,T),0),nb); 
+
+
+
+%% 2 - Updating spatial and temporal components iteratively to demix signals
+% We have now transformed the Mukamel-extracted data into CNMF-E
+% compatible objects. We will now iteratively apply the algorithm on our
+% ROIs to demix signals from spatial neighbours. For each repeat:
+%
+%   (i)     We update the spatial components
+%   (ii)    We update the temporal components
+%   (iii)   Overlapping components are ROIs and are merged
+%
+
+repeats = 3;
+
+A = Ain;
+C = Cin;
+b = bin;
+f = fin;
+
+
+for run = 1:repeats
+    
+    P.p = p;
+    [A,b,C] = update_spatial_components(Yr,C,f,A,P,options);
+    
+    if run == 1
+        P.p = 0;    % apparently just for speed : quicky first run
+        [C,f,P,S] = update_temporal_components(Yr,A,b,C,f,P,options);
+    else
+        [C,f,P,S] = update_temporal_components(Yr,A,b,C,f,P,options);
+    end
+    
+    [Am,Cm,K_m,merged_ROIs,P,Sm] = merge_components(Yr,A,b,C,f,P,S,options);
+    A = Am;
+    C = Cm;
+    K = K_m; %preparing the next iteration  
+    
+end
+
+
+
+%% 3 - We put the data back in the cn format
+% Now we can transform the CNMF-E - processed data back into Carey neurons.
+% These can later be fed to the MLSpike algorithm or other deconvolution
+% methods, with the hope that demixing occurred, which will fix the
+% clustering procedure, the ISI usw. 
+
+cn_dmxd.fov_width = w;
+cn_dmxd.fov_height = h;
+cn_dmxd.n_cells = K; %straightforward and common to all rois
+
+
+Af = full(A); 
+Af = reshape(Af,[d1,d2,d3]); %back to the frame shape
+
+for roi = 1:K
+    cn_dmxd.roi{1,:} = find(A(:,roi) ~= 0); %just locations of non-0 pixel
+    cn_dmxd.roi_landscape{1,roi} = Af(:,:,roi); %a full frame with values
+    
+    premask = Af(:,:,roi);
+    premask(premask ~= 0) = 1; %replacing the landscape values with 1s
+    cn_dmxd.mask{1,:} = premask;
+    
+    cn_dmxd.intensity = C(roi,:); %raw trace
+    
+    [x,y] = ind2sub([d1 d2],cn_dmxd.roi{1,:});
+    xc = sum(x)/length(x);
+    yc = sum(y)/length(y); %calculating the centroid's x and y coordinates in the frame
+    cn_dmxd.centroid{1,roi}(1) = xc;
+    cn_dmxd.centroid{1,roi}(1) = yc;
+end
+
+
+
+
 
