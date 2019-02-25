@@ -125,8 +125,8 @@ for roi = 1:K
     [x,y] = ind2sub([d1 d2],cn_dmxd.roi{1,:});
     xc = sum(x)/length(x);
     yc = sum(y)/length(y); %calculating the centroid's x and y coordinates in the frame
-    cn_dmxd.centroid{1,roi}(1) = xc;
-    cn_dmxd.centroid{1,roi}(1) = yc;
+    cn_dmxd.centroid{1,roi}(1,1) = xc;
+    cn_dmxd.centroid{1,roi}(1,2) = yc;
 end
 
 
