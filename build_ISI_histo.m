@@ -46,7 +46,7 @@ if isstruct(data) %then it is a deconvolution-like struct
             interspike = zeros(length(spike_times)-1,1);
             
             for t=1:length(spike_times)-1
-                interspike(t) = 1/(spike_times(t+1) - spike_times(t));
+                interspike(t) = (spike_times(t+1) - spike_times(t));
             end
             
                             if ~isempty(rmhigh)
@@ -58,7 +58,7 @@ if isstruct(data) %then it is a deconvolution-like struct
                 figure; hold on
                 title(['ISI histogram for ROI ', num2str(roi)])
                 histogram(interspike,'BinWidth',bw)
-                 xlabel('Hz bin')
+                 xlabel('ms bin')
             end
             
             [N,edges] = histcounts(interspike,'BinWidth',bw,'FaceColor',colour,'Normalization','probability');
@@ -72,7 +72,7 @@ if isstruct(data) %then it is a deconvolution-like struct
         for roi=1:n_rois
             spike_times = data.(['roi_',num2str(roi)]).spiketimes;
             for t=1:length(spike_times)-1
-                ISI = 1/(spike_times(t+1) - spike_times(t));
+                ISI = spike_times(t+1) - spike_times(t);
                 interspike = [interspike, ISI]; 
             end
             
@@ -97,7 +97,7 @@ else
     
     interspike = zeros(length(data)-1,1);
     for t = 1:length(data)-1
-        interspike(t) = 1/(data(t+1)-data(t));
+        interspike(t) = (data(t+1)-data(t));
     end
     
                             if ~isempty(rmhigh)

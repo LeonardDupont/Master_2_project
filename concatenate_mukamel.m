@@ -67,9 +67,7 @@ for konkat=1:length(headcounts)
     konkat_t = 0 ;
     
     for h=1:samples
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        thefile = tiff_reader(tiffs(c).name);  %Clearly limiting step in terms of time - imread_universal? 
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        thefile = imread_tifflib(tiffs(c).name); 
         [x,y,t] = size(thefile);
         konkat_t = konkat_t + t;
         concatenation.(['v_',num2str(h)]).data = thefile;
@@ -95,7 +93,7 @@ for konkat=1:length(headcounts)
     
     output = strcat(output,filename); %concatenate with the output path
     output = strcat(output,'.tif');
-    save_tiff(concatenated,output);
+    save_tiff(concatenated,output); %limiting timestep, clearly
     
     elapsed = toc;
     disp(['Concatenation done. Elapsed time was ', num2str(elapsed) , ' s.'])

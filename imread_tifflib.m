@@ -2,12 +2,15 @@ function FinalImage = imread_tifflib(filename, frametoread)
 %function FinalImage = imread_tifflib(filename, frametoread)
 %read tiff image, using tifflib (faster).
 %
-%input:
-%filename: the file that is read
-%frametoread: frame of the file that is read(optional)
-%if frametoread is not specified all frames will be read
-%output: 
-%the tiff file as an array
+% INPUT
+%    filename     the file that is read
+%    frametoread  frames of the file that are read
+%                 (if frametoread is not specified all frames will be read)
+% OUTPUT 
+%    the tiff file as an array
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Dr. Marcel Lauterbach, MPI Frankfurt (Laurent team)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [~, ~, ext ] = fileparts(filename);
 

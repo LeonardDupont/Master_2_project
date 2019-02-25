@@ -145,7 +145,7 @@ threshold = 1000;
 %% Process mukamel ROIs with CNFM to demix and then deconvolve
 % DEMIXING TO BE DONE
 
-
+edit CNMF_E_versuchen.m
 
 %% Giving a go to the MLSpike algorithm (Deneux et al. 2016) https://www.nature.com/articles/ncomms12190
 %% a : selecting single spike events
