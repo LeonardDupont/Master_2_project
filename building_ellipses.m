@@ -64,19 +64,7 @@ for roi = 1:N
     [V,D] = eigs(COVM);
     
     d = diag(D);
-      
-    %quiver works as described here:
-    %    quiver ( X , Y , Xv , Yv ) 
-    % -- X and Y : position in space to plot the vectors from (2D here, 1
-    %    for each vector)
-    % -- Then Xv are the x coordinates of our 2 vectors, scale by d(i), 
-    %    while Yv are the y ones. 
-    %
-    % However : in a h x w image, height (h) corresponds to y and width (w)
-    % to x, so we need to swap everything in the quiver and scatter. Mind
-    % it. 
-  
-  
+
     geometry.a = sqrt(d(1) * 5.991); % chi-square likelihood at 95% cfdnc
     geometry.b = sqrt(d(2) * 5.991); % p(s < 5.991) = 0.9
     geometry.xc = xc;
