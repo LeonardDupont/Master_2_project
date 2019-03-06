@@ -18,19 +18,20 @@ if (isempty(input))
     input = uigetdir();
 end
 
-cd(input)
 
-output = set_param_if_not_empty(output,input);
+%output = set_param_if_not_empty(output,input);
 
 %finding number of .tif files in the input path which we can concatenate
-tiffs= dir('*Ready.tif*'); 
 
-if (isempty(tiffs))
+filePattern = fullfile(input, '*Ready.tif');
+
+if (isempty(filePattern))
     error('No registered tif files in this directory')
 end
 
-
-V = length(dir('*Ready.tif*')); 
+V = length(dir(filePattern));
+videofiles = dir(filePattern); 
+original_output = output;
 
 %% Dealing with concatenation groupsize 
 if (N > V)
@@ -49,17 +50,25 @@ else
 end
 
 %% Concatenation bit + saving in uint16 tiff format 
-
+c=1;
 for konkat=1:length(headcounts) 
+    clear filename
+    clear output
+    clear concatenated
+    clear concatenation
+    
+    output = original_output;
+    
     tic
     disp(['Starting to concatenate tif files in group ', num2str(konkat), ' out of ', num2str(length(headcounts)), '.'])
-    c=1;
-    underscore = find(tiffs(c).name == '_');
+   
+    thename = videofiles(c).name;
+    underscore = find(thename == '_');
     
     if ispc
-        filename = ['\',tiffs(1).name(1:underscore(8)),'_concatenated_trials'];
+        filename = ['\',thename(1:underscore(8)),'_concatenated_trials'];
     else
-        filename = ['/',tiffs(1).name(1:underscore(8)),'_concatenated_trials']; %building base filename
+        filename = ['/',thename(1:underscore(8)),'_concatenated_trials']; %building base filename
     end
     
    
@@ -67,13 +76,15 @@ for konkat=1:length(headcounts)
     konkat_t = 0 ;
     
     for h=1:samples
-        thefile = imread_tifflib(tiffs(c).name); 
+        baseFileName = videofiles(c).name;
+        thename = baseFileName;
+        thefile = imread_tifflib(thename); 
         [x,y,t] = size(thefile);
         konkat_t = konkat_t + t;
         concatenation.(['v_',num2str(h)]).data = thefile;
         concatenation.(['v_',num2str(h)]).time = t;
-        underscore = find(tiffs(c).name == '_');
-        trial_nb = tiffs(c).name(underscore(end-2)+1:underscore(end-1)-1); %we get the reference number of the trial
+        underscore = find(thename == '_');
+        trial_nb = thename(underscore(end-2)+1:underscore(end-1)-1); %we get the reference number of the trial
         filename = strcat(filename,['_',num2str(trial_nb)]); %adding trial reference number to filename
         c=c+1;
     end

@@ -17,13 +17,13 @@ function [neuropile] = building_ellipses(cn,varargin)
 %       previously-approximated one and finds the pixels that are out 
 %       of (1) but within (2). 
 %       3 - Generates a mask out of it.
-%       4 - (undergoing) Producing spatial weighing of the neuropile. 
+%       4 - (optional) Producing spatial weighing of the neuropile. 
 % .........................................................................
 %
 %  ----- INPUT ----------------------
 %
 %    cn             carey neuron struct (usual, see documentation)
-%                   used fields : cn.n_cells, cn.mask
+%                   plz give full struct for the output
 %
 %    varargin       graphics     @logical    produces plot if 1 (all rois!)
 %                   l            @double     additional width of the 2nd
@@ -31,22 +31,27 @@ function [neuropile] = building_ellipses(cn,varargin)
 %  
 %  ----- OUTPUT ---------------------
 %
-%    neuropile      struct with fields     roi_1  > mask : neuropile mask
-%                                          (...)  > gradientmask : weights 
-%                                          roi_n
+%    neuropile      struct with fields (similar to cn)   
 % .........................................................................
 
 
 ip = inputParser;
-ip.AddParameter('graphics',0);
-ip.AddParameter('l',7)
+ip.addParameter('graphics',0);
+ip.addParameter('l',7)
 parse(ip,varargin{:})
-graphics = logical(ip.Results('graphics'));
-l = ip.Results('l');
+graphics = logical(ip.Results.graphics);
+l = ip.Results.l;
 
 N = cn.n_cells;
 
+tic
 for roi = 1:N
+    
+    if rem(roi,25) == 0 | roi == N
+        disp(['Building elliptic donut for ROI ',num2str(roi),' out of '...
+            ,num2str(N),'.'])
+        toc
+    end
     
     clear purkinje
     clear geometry
@@ -71,8 +76,13 @@ for roi = 1:N
     geometry.yc = yc;
     
     %calculating ellipse rotation angle
-    e1 = [1 0];
-    geometry.tilt = -vector_angles(e1,V(1,:));
+    e1 = [1 0]; %angle 0 is horizontal
+    if sqrt(d(2)) > sqrt(d(1))
+        geometry.tilt = vector_angles(e1,V(2,:));
+    else
+        geometry.tilt = vector_angles(e1,V(1,:));
+    end
+     
     
     %this returns the points [x,y] belonging to the perimeter
     Ssmall = border_ellipse(geometry);
@@ -92,6 +102,8 @@ for roi = 1:N
     gradientmask = zeros(h,w);
     np_mask = zeros(h,w);
     
+    imx = linspace(1,w,w);
+    imy = linspace(1,h,h);
     %creating the mask
     for x=1:length(imx)
         for y=1:length(imy)
@@ -108,8 +120,16 @@ for roi = 1:N
     end
     
  np_mask = logical(np_mask); %to a logical, binary image
- neuropile.(['roi_',num2str(roi)]).mask = np_mask;
- neuropile.(['roi_',num2str(roi)]).gradient = gradientmask;
+ 
+
+ maxweight = max(gradientmask(:));
+ gradientmask = gradientmask/maxweight;
+ neuropile.fov_height = h;
+ neuropile.fov_width = w;
+ neuropile.n_cells = N;
+ neuropile.donutmask{1,roi} = np_mask;
+ neuropile.donutgradient{1,roi} = gradientmask;
+ 
  
  
     if graphics
@@ -118,8 +138,8 @@ for roi = 1:N
         hold(ax, 'on');
         scatter(ax,ys,xs,'w','MarkerFaceAlpha',0.5,'MarkerEdgeAlpha',0.2),
         hold on
-        %quiver([yc,yc],[xc,xc],[V(2,1)*sqrt(d(1)),V(2,2)*sqrt(d(2))],...
-       %[V(1,1)*sqrt(d(1)),V(1,2)*sqrt(d(2))],'color','r','LineWidth',1.5),
+        quiver([yc,yc],[xc,xc],[V(2,1)*sqrt(d(1)),V(2,2)*sqrt(d(2))],...
+       [V(1,1)*sqrt(d(1)),V(1,2)*sqrt(d(2))],'color','r','LineWidth',1.5),
        % PUT THIS BACK IF YOU WANT TO PLOT EIGENVECTORS
         hold on
         plot(Ssmall(2,:) , Ssmall(1,:)), hold on
@@ -131,6 +151,7 @@ for roi = 1:N
         uistack(imh,'bottom')
         xlim([0 w])
         ylim([0,h])
+        clear figure 
     end
     
 
@@ -152,7 +173,7 @@ end
          yc = geometry.yc;
          tilt = geometry.tilt;
 
-         alpha = linspace(-pi,pi,2*pi/0.01);
+         alpha = linspace(0,2*pi,2*pi/0.01);
 
          S = zeros(2,length(alpha));
          for k = 1:length(alpha)
@@ -183,13 +204,24 @@ end
 
     function [angle] = vector_angles(u,v)
     % given two vectors in the any base, calculates the angle they form.
-    % based on u·v = |u| * |v| * cos(u,v). Output in rad. 
+    % based on u?v = |u| * |v| * cos(u,v). Output in rad. 
 
         dotuv = dot(u,v);
         normu = norm(u);
         normv = norm(v);
 
         angle = acos(dotuv/(normu*normv));
+        
+        v1 = v(1);
+        v2 = v(2);
+        
+        if (v1 > 0) && (v2 < 0)
+            angle = 2*pi - angle;
+        elseif (v1 < 0) && (v2 > 0)
+            angle = pi - angle;
+        elseif (v1 < 0) && (v2 < 0)
+            angle = pi + angle;
+        end  
     end
 
 
