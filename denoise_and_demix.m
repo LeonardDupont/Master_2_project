@@ -1,4 +1,4 @@
-function [cn] = denoise_and_demix(cn,neuropile,cn_bkf,varargin)
+function [cn] = denoise_and_demix(cn,neuropile,cn_bkg,varargin)
 % March 2019 - Carey lab - leonard.dupont@ens.fr
 % .........................................................................
 % This function is the final step in our attempt at demixing and denoising
