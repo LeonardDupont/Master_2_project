@@ -1,4 +1,4 @@
-function [] = plot_all_traces(cn,spacing,fs)
+function [] = plot_all_traces(cnintensity,spacing,fs)
 % Simply plots all calcium recording traces of the detected ROIs on a
 % single figure to get an idea of the diversity of signals
 
@@ -7,7 +7,7 @@ if nargin < 2
     fs = 30; %Hz
 end
 
-calcium_data = cn.intensity; 
+calcium_data = cnintensity; 
 [x,y] = size(calcium_data);
 
 clear back_to_zero

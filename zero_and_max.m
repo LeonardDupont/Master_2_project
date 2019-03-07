@@ -4,7 +4,7 @@ function [zm_calcium_data] = zero_and_max(calcium_data)
 %
 % INPUT
 %
-%    calcium_data       xdim = observations, ydim = variables (cells)
+%    calcium_data       xdim = cells, ydim = time
 %
 % OUTPUT
 %

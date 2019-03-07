@@ -142,6 +142,18 @@ ops.deconvType = 'L0';
 threshold = 1000;
 [~, ~, cn] = get_spikes_from_calcium_traces(cn.intensity, ops, threshold, cn, []);
 
+
+%%
+
+l = 15;
+neuropile = building_ellipses(cn,'l',l);
+
+inputfile = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/Concatenated_optimisation.tif'; 
+neuropile = get_fluorescence_from_donuts(neuropile, inputfile); %computationnally expensive
+
+cn = rmfield(cn,'intensity_dmdn');
+cn = denoise_and_demix(cn,neuropile,cn_bkg,'ci',0.3);
+
 %% Process mukamel ROIs with CNFM to demix and then deconvolve
 % DEMIXING TO BE DONE
 
@@ -151,8 +163,8 @@ edit CNMF_E_versuchen.m
 %% a : selecting single spike events
 % we must first use a nice calcium recording vector from which we'll select
 % single spike events. In this way, MLSpike will autocalibrate. 
-calcium_data = cn.intensity;  
-roi = 15; %check with the plot_all_traces function
+calcium_data = cn.intensity_dmdn;  
+roi = 45; %check with the plot_all_traces function
 good_trace = calcium_data(:,roi);
 [pks,locs] = define_single_events(good_trace);
 
@@ -171,10 +183,6 @@ calcium_norm = good_trace/mean(good_trace); %doesn't necessarily need to be norm
 
 pax = spk_autocalibration('par');
 pax.dt = 1/30; %framerate
-pax.amin = 0.003; 
-pax.amax = 1;
-pax.taumin = 0.1;
-pax.taumax = 1.8;
 pax.realspikes = sspike_events*1/30; %the transients we deem as representative of sspike events (see above)
 pax.mlspikepar.dographsummary = false;
 
@@ -199,11 +207,7 @@ par.finetune.sigma = sigmaest; %to be left empty from my experience, even
 for roi=1:185
     disp(['Processing ROI ' , num2str(roi)])
     [spk, fit, drift, parest] = spk_est(calcium_data(:,roi),par); 
-    deconvolution.(['roi_',num2str(roi)]).spiketimes = spk;  %we store everything in a big struct with rois as subfields
-    deconvolution.(['roi_',num2str(roi)]).fit = fit;
-    deconvolution.(['roi_',num2str(roi)]).mask = cn.mask{1,roi};
-    deconvolution.(['roi_',num2str(roi)]).centroid = cn.centroid{1,roi}; %important for the spatial rasterplot 
-    deconvolution.(['roi_',num2str(roi)]).raw_trace = calcium_data(:,roi);
+    cn.spiketimes{1,roi} = spk;
 end
 
 %%

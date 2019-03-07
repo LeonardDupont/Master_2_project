@@ -26,7 +26,7 @@ R1nR2 = intersect(R1,R2);
 maxcard = max(length(R1),length(R2));
 
 if card_inter ~= 0
-    D = maxcard / card_inter;
+    D = maxcard / card_inter; 
 else
     D = 987654321;
 end
