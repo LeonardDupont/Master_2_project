@@ -47,14 +47,14 @@ frames = length(cn.intensity);
 
 sigma = cn_bkg.intensity;
 for roi = 1:N
-    Fi = cn.intensity{1,roi};
-    Ni = neuropile.intensity{1,roi};
+    Fi = cn.intensity(:,roi);
+    Ni = neuropile.intensity(:,roi);
     intensity_dmdn = zeros(frames,1);
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
     for t = 1:frames
         intensity_dmdn(t,1) = Fi(t) - ci*Ni(t) - sigma(t);
     end
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  
-    cn.intensity_dmdn{1,roi} = intensity_dmdn;
+    cn.intensity_dmdn(:,roi) = intensity_dmdn;
 
 end

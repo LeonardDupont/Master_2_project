@@ -51,16 +51,19 @@ function [neuropile] = get_fluorescence_from_donuts(neuropile,inputfile,varargin
             end                               %the masked FOV
             
                     for frame = 1:t
-                          theframe = weighed_mask(:,:,frame);
-                          neuropile.intensity(frame,roi) = ...
-                          sum(theframe(:))/length(find(theframe ~= 0)) ;
+                        theframe = weighed_mask(:,:,frame);
+                        nonnull = length(find(theframe ~= 0));
+                        S = sum(theframe(:));
+                        neuropile.intensity(frame,roi) = S / nonnull ;
                     end  
             
         else
                     for frame = 1:t
                         theframe = masked(:,:,frame);
-                        neuropile.intensity(frame,roi) = ...
-                        sum(theframe(:))/length(find(theframe ~= 0)) ;
+                        nonnull = length(find(theframe ~= 0));
+                        S = sum(theframe(:));
+                        neuropile.intensity(frame,roi) = S / ...
+                            length(find(theframe ~= 0)) ;
                     end
         end
     end
