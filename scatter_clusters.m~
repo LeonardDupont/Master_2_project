@@ -35,12 +35,12 @@ function [] = scatter_clusters(activity_clusters,frame_path)
         for roi = 1:Nrois
             x = cluster.(roi_names{roi}).centroid(1,1);
             y = cluster.(roi_names{roi}).centroid(2,1);
-            scatter(y,x,36,colourmap,'filled'), hold on
+            scatter(,36,colourmap,'filled'), hold on
         end
         
         xb = activity_clusters.(['cluster_',num2str(c)]).barycenter(1,1);
         yb = activity_clusters.(['cluster_',num2str(c)]).barycenter(1,2);
-        scatter(yb,xb,1,colourmap,'filled'), text(yb,xb,{num2str(c)},'color','w'); hold on
+        scatter(xb,yb,1,colourmap,'filled'), text(yb,xb,{num2str(c)},'color','w'); hold on
         
     end
     imh = imshow(frame_path,'Parent',ax);

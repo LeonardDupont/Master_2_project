@@ -26,6 +26,7 @@ function [activity_clusters,C] = hybrid_clustering(data,cl)
 %               Dth      threshold distance to merge neighbourhoods
 %                        (default : 1/0.6)
 %        spatialplot     logical, 1 if you want to plot (default : 0)
+%        frame_path      path to registration template for spatialplot
 %         rasterplot     logical, 1 if you want to plot (default : 0)
 %          normalise     logical, 1 if you want to normalise (default : 0)
 %        norm_method     either 'mean' or 'max' (default : [])
@@ -63,6 +64,7 @@ if ~isstruct(data)
     disp('Using pixels as clustering units.')
     grdfov = grid_grouping(data,cl.gridbins);
     N = (cl.gridbins)^2;
+    [~,t] = size(grdfov.intensity);
     pixels = 1;
       
 elseif isstruct(data)
@@ -70,6 +72,7 @@ elseif isstruct(data)
     cn = data;
     N = cn.n_cells;
     pixels = 0;
+    [~,t] = size(cn.intensity.');
 else
     error('Data and method do not match : check documentation. Aborting.')
 end
@@ -229,7 +232,7 @@ end
     for roi = 1:N
         weights = zeros(N,1);
         itsneighbours = neighbourhood.(['roi_',num2str(roi)]).neighB;
-        for k = 1:rois
+        for k = 1:N
             if ~isempty( find(itsneighbours == k) ) 
                 weights(k) = 1;
             end
@@ -283,7 +286,7 @@ end
         end
     % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         [Dmin,neighbourhood,merge_events] = ...
-        merge_closest(M,neighbourhood,rois, merge_events,cl.Dth); 
+        merge_closest(M,neighbourhood,N, merge_events,cl.Dth); 
     % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
     end
     toc    
@@ -315,7 +318,7 @@ end
     names = fieldnames(neighbourhood);
     disp(['i. Initial situation = ',num2str(L),' clusters.'])
     
-    neighbourhood.lonely = [];
+    %neighbourhood.lonely = [];
     
     for k = 1:L
         d = length(neighbourhood.(names{k}).neighB);
@@ -348,22 +351,22 @@ if ~pixels
         y = zeros(neighB_l,1);
         
         %for mean calcium trace
-        cluster_traces = zeros(neighB_l,datapoints);
+        cluster_traces = zeros(neighB_l,t);
         
         for e = 1:neighB_l
             
             roi = neighB(e);
             
             % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-            position = cn.centroid{1,roi};
-            activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(roi)]).centroid = position;
-            x(e) = position(1,1);
-            y(e) = position(1,2);
+            posi = cn.centroid{1,roi};
+            activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(roi)]).centroid = posi;
+            x(e) = posi(1,1);
+            y(e) = posi(1,2);
             clear position
             % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
             ca_data = cn.intensity(:,roi);
             activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(roi)]).intensity = ca_data;
-            cluster_traces(e,:) = ca_data;
+            cluster_traces(e,:) = ca_data.';
             clear ca_data
             % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
             if logical(cl.deconv0)
@@ -382,7 +385,7 @@ if ~pixels
     end
 %% Clustering units : pixels %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 elseif pixels
-    clear activity_clusters
+    %clear activity_clusters
     L = numel(fieldnames(neighbourhood));
     names = fieldnames(neighbourhood);
 
@@ -396,20 +399,20 @@ elseif pixels
         y = zeros(neighB_l,1);
         
         %for mean calcium trace
-        cluster_traces = zeros(neighB_l,datapoints);
+        cluster_traces = zeros(neighB_l,t);
         
         for e = 1:neighB_l
             
             roi = neighB(e);
             
             % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-            position = grdfov.centroid{1,roi};
-            activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(roi)]).centroid = position;
-            x(e) = position(1,1);
-            y(e) = position(1,2);
+            posi = grdfov.centroid{1,roi};
+            activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(roi)]).centroid = posi;
+            x(e) = posi(1);
+            y(e) = posi(2);
             clear position
             % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-            ca_data = grdfov.intensity(:,roi);
+            ca_data = grdfov.intensity(roi,:);
             activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(roi)]).intensity = ca_data;
             cluster_traces(e,:) = ca_data;
             clear ca_data
@@ -445,8 +448,13 @@ end
     % A scatter plot with the registration template and a rasterplot 
     % are the two available options
     
-    if logical(cl.spatialplot) 
-        scatter_clusters(activity_clusters,frame_path) 
+    if cl.spatialplot 
+        if isempty(cl.frame_path)
+            warning('No FOV to scatter points on, please input path here.')
+            cl.frame_path = input(prompt);
+        end 
+        
+        scatter_clusters(activity_clusters,cl.frame_path) 
         
         figure; hold on
         imagesc(C), colorbar
@@ -461,7 +469,7 @@ end
 
 
 
-
+disp('Clustering done!')
 
 end
 
