@@ -17,7 +17,7 @@ function [neuropile] = building_ellipses(cn,varargin)
 %       previously-approximated one and finds the pixels that are out 
 %       of (1) but within (2). 
 %       3 - Generates a mask out of it.
-%       4 - (optional) Producing spatial weighing of the neuropile. 
+%       4 - Splits the neuropile mask into (nseg) regions (optional).  
 % .........................................................................
 %
 %  ----- INPUT ----------------------
@@ -37,13 +37,17 @@ function [neuropile] = building_ellipses(cn,varargin)
 
 ip = inputParser;
 ip.addParameter('graphics',0);
-ip.addParameter('l',7)
+ip.addParameter('l',7);
+ip.addParameter('segment_ellipse',0);
+ip.addParameter('nseg',5);
 parse(ip,varargin{:})
 graphics = logical(ip.Results.graphics);
 l = ip.Results.l;
-
+segment_ellipse = logical(ip.Results.segment_ellipse);
+nseg = ip.Results.nseg;
 N = cn.n_cells;
 
+%%  BUILDING THE ELLIPSE AND ITS NEUROPILE DONUT
 tic
 for roi = 1:N
     
@@ -75,12 +79,16 @@ for roi = 1:N
     geometry.xc = xc;
     geometry.yc = yc;
     
-    %calculating ellipse rotation angle
-    e1 = [1 0]; %angle 0 is horizontal
+    %calculating the tilt of the ellipse
+    e1 = [1 0];
     if sqrt(d(2)) > sqrt(d(1))
-        geometry.tilt = vector_angles(e1,V(2,:));
+        v1 = V(2,1); %these are x = heights, so actually y in R^2
+        v2 = V(2,2); %these are y = width, so actually x in R^2
+        geometry.tilt = vector_angles2(e1,[v1,v2]);
     else
-        geometry.tilt = vector_angles(e1,V(1,:));
+        v1 = V(1,1);
+        v2 = V(1,2);
+        geometry.tilt = vector_angles2(e1,[v1,v2]);
     end
      
     
@@ -130,7 +138,74 @@ for roi = 1:N
  neuropile.donutmask{1,roi} = np_mask;
  neuropile.donutgradient{1,roi} = gradientmask;
  
+ %% SEGMENTING THE DONUT INTO (nseg) REGIONS 
  
+     if segment_ellipse
+         Pb2b1 = inv(V); 
+         %this is the transfer matrix from B1 (canonical) to B2 (ellipse)
+         % and      [x,y]b2 = Pb2b1 * [x,y]b1' (transfer relation)
+         perimeter = get_ellipse_perim(geometry_enlarged);
+    % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+         angle = 0; %rad
+         [last_xy(1),last_xy(2)] = get_position(angle,geometry_enlarged);
+         angles = zeros(nseg,1);
+         angles(end) = 2*pi ;
+         
+         for s = 2:nseg
+             per = 0;
+             x0 = last_xy(1);
+             y0 = last_xy(2);
+             dperim = perimeter/nseg;
+             while (per < dperim) && (angle < 2*pi)
+                 angle = angle + 0.001;
+                 [x,y] = get_position(angle,geometry_enlarged);
+                 dis = sqrt((x0-x)^2 + (y0-y)^2);
+                 per = per + dis;
+                 x0 = x;
+                 y0 = y;
+             end
+             last_xy(1) = x;
+             last_xy(2) = y;
+             angles(s-1) = angle;
+         end
+    % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    
+         np_mask_seg = zeros(h,w);
+         
+         for x = 1:h
+             for y = 1:w
+             % .   .   .   .   .   .   .   .   .   .   .   .   .   .   .
+             xy = [x-xc,y-yc]; %we get pixel coordinates centered on (xc,yc)
+             xy =  Pb2b1 * xy.'; %we move it to our ellipse's base (eigenvectors)
+             xy = [xy(2),xy(1)]; %reverse the order
+             
+             % Here we change base using the transfer matrix, but the issue
+             % back in the correlation matrix was that x coordinates 
+             % correspond to height (so y in R^2) and vice versa for y. So
+             % basically, V =  v11   v21     where vectors in R^2 should 
+             %                 v12   v22
+             % be (v12,v11) and (v22,v21). Therefore, after using Pb2b1, we
+             % must reverse the coordinates. Same goes for ik afterwards. 
+             
+             [i,k] = get_position(0,geometry_enlarged); %calculate reference point (0-angle vector)
+             ik = [k-yc,i-xc]; %center on ellipse (xc,yc)
+             ik = Pb2b1 * ik.'; %change base
+             ik = [ik(2),ik(1)]; %reverse again
+             % .   .   .   .   .   .   .   .   .   .   .   .   .   .   .
+             theta = vector_angles2(ik,xy); %where is our pixel in polar coordinates? 
+             
+             seg = 1;
+             while theta > angles(seg)
+                 seg = seg + 1; %while the angle is greater than angles(seg)
+             end                %we move to the next quadrant
+            np_mask_seg(x,y) = seg; 
+             end
+         end
+    % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+     np_mask_seg = np_mask_seg .* np_mask; %convolute to keep the donut only 
+     neuropile.np_mask_seg{1,roi} = np_mask_seg;
+     end
+ 
+ %% GRAPHICAL PART
  
     if graphics
         figure;
@@ -144,85 +219,24 @@ for roi = 1:N
         hold on
         plot(Ssmall(2,:) , Ssmall(1,:)), hold on
         plot(Slarge(2,:) , Slarge(1,:)), hold on
+        if segment_ellipse
+            for s = 1:nseg
+                angle = angles(s);
+                [x,y] = get_position(angle,geometry_enlarged);
+                scatter(y,x,'filled','w'), hold on
+            end
+            ims = imagesc(ax,np_mask_seg);
+            uistack(ims,'bottom')
+        end
         imh = image(ax, np_mask);
-        imu = image(ax,gradientmask);
+        %imu = image(ax,gradientmask);
         hold(ax,'off')
-        uistack(imu,'bottom')
+        %uistack(imu,'bottom')
         uistack(imh,'bottom')
         xlim([0 w])
         ylim([0,h])
         clear figure 
-    end
-    
-
-    
+    end    
 end
-
-
-%% annex functions
-
-    function [S] = border_ellipse(geometry)
-    %given geometry properties of the ellipse, 
-    %gives back the list of coordinates for the 
-    %points forming its perimeter. 
-    
-    
-         a = geometry.a;
-         b = geometry.b;
-         xc = geometry.xc;
-         yc = geometry.yc;
-         tilt = geometry.tilt;
-
-         alpha = linspace(0,2*pi,2*pi/0.01);
-
-         S = zeros(2,length(alpha));
-         for k = 1:length(alpha)
-            t = alpha(k);
-            S(1,k) = xc + a*cos(t)*cos(tilt) - b*sin(t)*sin(tilt);
-            S(2,k) = yc + a*cos(t)*sin(tilt) + b*sin(t)*cos(tilt);
-         end
-    end
-
-
-
-    function [inout] = inoutellipse(x,y,geometry)
-    % using the cartesian equation of the ellipse, returns a value
-    % that will be < 1 if the point is inside of it (1 if on the perimeter)
-    % and > 1 otherwise.
-   
-    
-        a = geometry.a;
-        b = geometry.b;
-        xc = geometry.xc;
-        yc = geometry.yc;
-        tilt = geometry.tilt;
-
-
-        inout = ( ((x-xc)*cos(tilt) + (y-yc)*sin(tilt))/a)^2 + ...
-        ( ((x-xc)*sin(tilt) - (y-yc)*cos(tilt))/b)^2;
-    end
-
-    function [angle] = vector_angles(u,v)
-    % given two vectors in the any base, calculates the angle they form.
-    % based on u?v = |u| * |v| * cos(u,v). Output in rad. 
-
-        dotuv = dot(u,v);
-        normu = norm(u);
-        normv = norm(v);
-
-        angle = acos(dotuv/(normu*normv));
-        
-        v1 = v(1);
-        v2 = v(2);
-        
-        if (v1 > 0) && (v2 < 0)
-            angle = 2*pi - angle;
-        elseif (v1 < 0) && (v2 > 0)
-            angle = pi - angle;
-        elseif (v1 < 0) && (v2 < 0)
-            angle = pi + angle;
-        end  
-    end
-
-
 end
+    
