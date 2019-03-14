@@ -50,7 +50,9 @@ function [Dmin,neighbourhood,merge_events] = merge_closest(M,neighbourhood,N,mer
            w3(k) = (w1(k) + w2(k))/ 2; %new weight vector penalising unions
        end
 
-       disp(['Now merging ',names{i},' and ',names{j},'.'])
+       if rem(merge_events,10) == 0
+           disp(['Merge events : ',num2str(merge_events),'.']); 
+       end
        neighbourhood = rmfield(neighbourhood,names{i});
        neighbourhood = rmfield(neighbourhood,names{j});
        

@@ -1,17 +1,13 @@
-function [activity_clusters] = clustering_k_means(deconvolution,calcium_data,varargin)
-%% CLUSTERING PURKINJE CELLS BASED ON THEIR CLIMBING FIBRE ACTIVITY
+function [activity_clusters] = clustering_k_means(calcium_data,struct,varargin)
 %% February 2019 - Carey lab - leonard.dupont@ens.fr
+%..........................................................................
 % This whole script is dedicated to an attempt of spatially clustering the
-% cells based on their calcium activity. This all relies on mukamel rois,
-% so there is no demixing yet. We will then try the pixel-based method,
-% which should be much faster. Detailed explanations can be found in the
-% pdf file at this link :
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
+% cells based on their calcium activity.
+% ........................................................................
+% 
 % -- INPUT ------------
 %
-%    deconvolution     the deconvolution struct build after deconvoluting
-%                      calcium signals (see analyse_neurobehavioural_...)
+%    struct            struct with roi data
 %
 %    calcium_data      a n x p matrix where (n) are the rois and (p) the
 %                      observations (time: fluorescence value for the roi)
@@ -28,6 +24,7 @@ function [activity_clusters] = clustering_k_means(deconvolution,calcium_data,var
 %                      rasterplot   1 if you want it, 0 otherwise (default)
 %                      frame_path   the path to the registration template
 %                                   (if spatialplot == 1)
+%                      deconvolutO  1 if you use the deconvolution struct
 %
 % -- OUTPUT -----------
 %
@@ -37,7 +34,7 @@ function [activity_clusters] = clustering_k_means(deconvolution,calcium_data,var
 %                                                      > raw_trace (Fluo.)                        
 %                                             >  (...)
 %                         
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ........................................................................
 
 
 
@@ -49,7 +46,8 @@ ip.addParameter('P',0.8);
 ip.addParameter('Dth',1/0.6);
 ip.addParameter('spatialplot',0);
 ip.addParameter('rasterplot',0);
-ip.addParameter('frame_path',[])
+ip.addParameter('frame_path',[]);
+ip.addParameter('deconv0',0);
 
 parse(ip,varargin{:});
 
@@ -60,10 +58,15 @@ Dth = ip.Results.Dth;
 spatialplot = logical(ip.Results.spatialplot);
 rasterplot = logical(ip.Results.rasterplot);
 frame_path = ip.Results.frame_path;
+deconv0 = ip.Results.deconv0;
 
 %% normalise and bring back to baseline (0)
 tic
-u = numel(fieldnames(deconvolution));
+if deconv0
+    u = numel(fieldnames(struct));
+else
+    u = deconvolution.n_cells;
+end
 disp(' ------ 1 - Normalising the calcium data ------')
 %zm_calcium_data = zero_and_mean(calcium_data); %normalise with the mean
 zm_calcium_data = zero_and_max(calcium_data);  %normalise with the max 
@@ -268,7 +271,7 @@ L = numel(fieldnames(neighbourhood));
 names = fieldnames(neighbourhood);
 Z = 5;
 disp([' ------ 8 - Now removing clusters comprising less than ',num2str(Z),' cells --------'])
-disp(['? Initial situation = ',num2str(L),' clusters.'])
+disp(['_i_ Initial situation = ',num2str(L),' clusters.'])
 
 for k = 1:L
     x = length(neighbourhood.(names{k}).neighB);
@@ -277,7 +280,7 @@ for k = 1:L
     end
 end
 L = numel(fieldnames(neighbourhood));
-disp(['? Final situation = ',num2str(L),' clusters'])
+disp(['_ii_ Final situation = ',num2str(L),' clusters'])
 
 %% Now we build a final struct with the clusters but with activity data AND spatial coordinates (centroids)
 disp(' ------ 9 - Preparing spatial plot, rasterplot and output structure --------')
@@ -290,23 +293,39 @@ for k = 1:L
     H = length(regions);
     x = zeros(H,1);
     y = zeros(H,1);
-    for roi = 1:H
-        calcium_matrix = zeros(H,datapoints);
-        nb = regions(roi);
-        activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).centroid = deconvolution.(['roi_',num2str(nb)]).centroid;
-        x(roi) = deconvolution.(['roi_',num2str(nb)]).centroid(1,1);
-        y(roi) = deconvolution.(['roi_',num2str(nb)]).centroid(1,2);
-        activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).spiketimes = deconvolution.(['roi_',num2str(nb)]).spiketimes;
-        activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).raw_trace = deconvolution.(['roi_',num2str(nb)]).raw_trace;
-        calcium_matrix(roi,:) = (deconvolution.(['roi_',num2str(nb)]).raw_trace).';
-        activity_clusters.(['cluster_',num2str(k)]).mean_trace = mean(calcium_matrix,1);
-        xc = sum(x) / H;
-        yc = sum(y) / H;
-        activity_clusters.(['cluster_',num2str(k)]).barycenter(1,1:2) = [xc yc];
+    calcium_matrix = zeros(H,datapoints);
+    
+    if deconv0
+        deconvolution = struct;
+        for roi = 1:H
+            nb = regions(roi);
+            activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).centroid = deconvolution.(['roi_',num2str(nb)]).centroid;
+            x(roi) = deconvolution.(['roi_',num2str(nb)]).centroid(1,1);
+            y(roi) = deconvolution.(['roi_',num2str(nb)]).centroid(1,2);
+            activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).spiketimes = deconvolution.(['roi_',num2str(nb)]).spiketimes;
+            activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).raw_trace = deconvolution.(['roi_',num2str(nb)]).raw_trace;
+            calcium_matrix(roi,:) = (deconvolution.(['roi_',num2str(nb)]).raw_trace).';
+        end
+        
+    else
+        cn = struct;
+        for roi = 1:H
+            nb = regions(roi);
+            activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).centroid = cn.centroid{1,nb};
+            x(roi) = activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).centroid(1,1);
+            y(roi) = activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).centroid(1,2);
+            activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).raw_trace = cn.intensity_dmdn(:,nb);
+            calcium_matrix(roi,:) = cn.intensity_dmdn(:,nb);
+        end
     end
+    
+    activity_clusters.(['cluster_',num2str(k)]).mean_trace = mean(calcium_matrix,1);
+    xc = sum(x) / H;
+    yc = sum(y) / H;
+    activity_clusters.(['cluster_',num2str(k)]).barycenter(1,1:2) = [xc yc];
 end
 
-%%
+%% Correlation matrix
 
 C = zeros(L,L);
 
@@ -319,40 +338,9 @@ for k = 1:L
     end
 end
 
-
-
-
-
 %% We can now plot the rois back on a frame with a colour-based code in compliance with their cluster
-if spatialplot
-    Nclusters = numel(fieldnames(activity_clusters));
-    map = colormap(parula(Nclusters));
-
-    h=figure('visible','off'); hold on
-    title('Spatial distribution of ROIs')
-
-    imshow(frame_path), hold on;
-
-    for c = 1:Nclusters
-
-        c_data = activity_clusters.(['cluster_',num2str(c)]);
-        Nrois = numel(fieldnames(c_data.rois)) - 2; %-2 : barycentre and mean trace
-        roi_names = fieldnames(c_data.rois);
-        colourmap = map(c,:);
-
-        for roi = 1:Nrois
-            x = c_data.rois.(roi_names{roi}).centroid(1,1);
-            y = c_data.rois.(roi_names{roi}).centroid(1,2);
-            scatter(x,y,36,colourmap,'filled'), hold on
-        end
-        
-        x = c_data.barycenter(1,1);
-        y = c_data.barycenter(1,2);
-        scatter(x,y,1,colourmap,'filled'), text(x,y,{num2str(c)},'color','w'); hold on
-        
-    end
-
-    set(h,'visible','on'); hold off 
+if spatialplot  
+    scatter_clusters(activity_clusters,frame_path) 
 end
 
 figure; hold on
@@ -361,52 +349,8 @@ hold off
 
 %% We can also give back a raster plot
 if rasterplot
-    
-    spacing = 0.5;
-    height = 1;
-    
-    middles = [];
-    labels = {};
-    
-    rplot=figure('visible','off');
-    hold on
-    roi_counter = 0;
-    
-    for c = 1:Nclusters
-
-        c_data = activity_clusters.(['cluster_',num2str(c)]);
-        Nrois = numel(fieldnames(c_data.rois));
-        roi_names = fieldnames(c_data.rois);
-        colourmap = map(c,:);
-
-        for roi = 1:Nrois
-            
-            roi_counter = roi_counter + 1;
-            spks = c_data.rois.(roi_names{roi}).spiketimes;
-            number = strsplit(roi_names{roi},'_');
-            number = number{2}; %just the number
-            y = [(roi_counter-1)*height + roi_counter*spacing , roi_counter*height + roi_counter*spacing];
-            middles(end+1) = roi_counter*height + roi_counter*spacing - 1/2*height; 
-            labels{end+1} = number;
-            
-            for events = 1:length(spks)
-                x = [spks(events),spks(events)];
-                plot(x,y,'color',colourmap), hold on
-            end
-        end
-    end
-    
-    set(groot,'CurrentFigure',rplot)
-    xlabel('Time (s)')
-    ylabel('Spatially-organised ROIs')
-    set(gca,'TickLength',[0.001,0])
-    set(gca,'Ytick',middles)
-    set(gca,'YTickLabel',labels) %details to legend the rois over y 
-    ytickangle(45)
-    box off
-    axis tight
-    hold off 
-    set(rplot,'visible','on')
+   raster_clusters(activity_clusters); 
+   %only works if you fed the clustering algorithm with deconvolution
 end
 end
 

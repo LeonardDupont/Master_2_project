@@ -154,6 +154,16 @@ neuropile = get_fluorescence_from_donuts(neuropile, inputfile); %computationnall
 cn = rmfield(cn,'intensity_dmdn');
 cn = denoise_and_demix(cn,neuropile,cn_bkg,'ci',0.3);
 
+%%
+clear cl
+cl.normalise = 1;
+cl.spatialplot = 1;
+cl.usedmdn = 0; 
+cl.frame_path = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template.tif';
+
+[activity_clusters,C] = hybrid_clustering(cn,cl);
+
+
 %% Process mukamel ROIs with CNFM to demix and then deconvolve
 % DEMIXING TO BE DONE
 

@@ -58,11 +58,20 @@ cl = check_empty(cl,'normalise',0);
 cl = check_empty(cl,'norm_method','max');
 cl = check_empty(cl,'Z',10);
 cl = check_empty(cl,'gridbins',15);
+cl = check_empty(cl,'usedmdn',0); 
+cl = check_empty(cl,'deconv0',0);
 
 
 if ~isstruct(data)
     disp('Using pixels as clustering units.')
+    if ischar(data)
+        name = data;
+        clear data
+        data = imread_tifflib(name);
+        clear name
+    end
     grdfov = grid_grouping(data,cl.gridbins);
+    clear data
     N = (cl.gridbins)^2;
     [~,t] = size(grdfov.intensity);
     pixels = 1;
@@ -73,6 +82,7 @@ elseif isstruct(data)
     N = cn.n_cells;
     pixels = 0;
     [~,t] = size(cn.intensity.');
+    clear data
 else
     error('Data and method do not match : check documentation. Aborting.')
 end
@@ -84,19 +94,39 @@ if ~pixels
     %% 1 - Normalisation 
 
     tic
-
-    if logical(cl.normalise)
-        disp(' ------ 1 - Normalising the calcium data ------')
-        switch cl.norm_method
-            case 'mean'
-                zm_calcium_data = zero_and_mean(cn.intensity.'); 
-            case 'max'
-                zm_calcium_data = zero_and_max(cn.intensity.');
-        end 
-    else
-        zm_calcium_data = cn.intensity.'; 
+    if cl.usedmdn && isfield(cn,'intensity_dmdn')
+        traces = cn.intensity_dmdn.'; 
+        if logical(cl.normalise)
+            disp(' ------ 1 - Normalising the calcium data ------')
+            switch cl.norm_method
+                case 'mean'
+                    zm_calcium_data = zero_and_mean(traces); 
+                case 'max'
+                    zm_calcium_data = zero_and_max(traces);
+            end 
+        else
+            zm_calcium_data = traces; 
+        end
+    elseif cl.usedmdn && ~isfield(cn,'intensity_dmdn')
+        warning('No field with demixed-denoised traces in cn. Using raw intensity instead')
+        cl.usedmdn = 0;
     end
-  
+    if ~cl.usedmdn
+        traces = cn.intensity.' ; 
+        if logical(cl.normalise)
+            disp(' ------ 1 - Normalising the calcium data ------')
+            switch cl.norm_method
+                case 'mean'
+                    zm_calcium_data = zero_and_mean(traces); 
+                case 'max'
+                    zm_calcium_data = zero_and_max(traces);
+            end 
+        else
+            zm_calcium_data = traces; 
+        end
+        
+    end
+    toc
 %% Clustering units : pixels %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 elseif pixels
     %% 1 - Normalisation 
@@ -287,6 +317,9 @@ end
     % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         [Dmin,neighbourhood,merge_events] = ...
         merge_closest(M,neighbourhood,N, merge_events,cl.Dth); 
+        if rem(merge_events,10) == 0
+           toc 
+        end
     % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
     end
     toc    
@@ -318,14 +351,12 @@ end
     names = fieldnames(neighbourhood);
     disp(['i. Initial situation = ',num2str(L),' clusters.'])
     
-    %neighbourhood.lonely = [];
+    lonely = [];
     
     for k = 1:L
         d = length(neighbourhood.(names{k}).neighB);
         if d < cl.Z
-            %konkat = ... THINK ABOUT THIS
-            %cat(1,neighbourhood.lonely,neighbourhood.(names{k}).neighB);
-            %neighbourhood.lonely = konkat;
+            lonely(end+d) = neighbourhood.(names{k}).neighB;
             neighbourhood = rmfield(neighbourhood,names{k});
         end
     end
@@ -362,7 +393,7 @@ if ~pixels
             activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(roi)]).centroid = posi;
             x(e) = posi(1,1);
             y(e) = posi(1,2);
-            clear position
+            clear posi
             % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
             ca_data = cn.intensity(:,roi);
             activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(roi)]).intensity = ca_data;
@@ -383,6 +414,35 @@ if ~pixels
         activity_clusters.(['cluster_',num2str(k)]).barycenter(1,1:2) = [xc yc];
   
     end
+    
+    %Dealing with lonely rois (non-clustered ones)
+    LL = length(lonely); 
+    lonely_traces = zeros(LL,t);
+    x = zeros(LL,1);
+    y = zeros(LL,1);
+    for k = 1:LL
+        % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+        ca_data = cn.intensity(:,k);
+        activity_clusters.lonely.rois.(['roi_',num2str(lonely(k))]).intensity = ca_data;
+        lonely_traces(k,:) = ca_data.';
+        clear ca_data
+        % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+        posi = cn.centroid{1,k};
+        activity_clusters.lonely.rois.(['roi_',num2str(lonely(k))]).centroid = posi;
+        x(k) = posi(1);
+        y(k) = posi(2);
+        clear posi
+        % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+        if logical(cl.deconv0)
+            spk = cn.spiketimes{1,k};
+            activity_clusters.lonely.rois.(['roi_',num2str(lonely(k))]).spiketimes = spk;
+            clear spk
+        end
+    end
+    
+    activity_clusters.lonely.mean_trace = mean(lonely_traces,1); 
+    activity_clusters.lonely.barycenter(1,1:2) = [mean(x),mean(y)];
+    
 %% Clustering units : pixels %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 elseif pixels
     %clear activity_clusters
@@ -426,6 +486,32 @@ elseif pixels
         activity_clusters.(['cluster_',num2str(k)]).barycenter(1,1:2) = [xc yc];
         
     end 
+    
+    %Dealing with lonely rois (non-clustered ones) 
+    LL = length(lonely); 
+    lonely_traces = zeros(LL,t);
+    x = zeros(LL,1);
+    y = zeros(LL,1);
+    for k = 1:LL
+        % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+        ca_data = grdfov.intensity(k,:);
+        activity_clusters.lonely.rois.(['roi_',num2str(lonely(k))]).intensity = ca_data;
+        lonely_traces(k,:) = ca_data;
+        clear ca_data
+        % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+        posi = grdfov.centroid{1,k};
+        activity_clusters.lonely.rois.(['roi_',num2str(lonely(k))]).centroid = posi;
+        x(k) = posi(1);
+        y(k) = posi(2);
+        clear posi
+        % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  
+    end
+    
+    activity_clusters.lonely.mean_trace = mean(lonely_traces,1); 
+    activity_clusters.lonely.barycenter(1,1:2) = [mean(x),mean(y)];
+    
+    
+    
 end
         
     %% 10 - Correlation matrix
