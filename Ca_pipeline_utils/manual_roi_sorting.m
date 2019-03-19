@@ -34,7 +34,7 @@ redraw()
                         end
                     case 'leftarrow'
                         if cell<=N
-                            good_purkinje(cell) = 1;
+                            good_purkinje(cell) = 0;
                             cell = cell + 1;
                         end
                     otherwise
