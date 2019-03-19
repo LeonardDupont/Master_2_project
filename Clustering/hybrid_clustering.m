@@ -34,7 +34,8 @@ function [activity_clusters,C] = hybrid_clustering(data,cl)
 %                        (default : 10)
 %           gridbins     when using pixel-based clustering, number of bins
 %                        to create in x and y directions (default : 15)
-%
+%            deconv0     set to 1 if you are using the 'deconvolution'
+%                        structure post MLSpike (or other algorithm)
 %
 % -- OUTPUT -----------
 %

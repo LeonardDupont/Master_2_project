@@ -3,10 +3,9 @@ function [neuropile] = building_ellipses(cn,varargin)
 % .........................................................................
 % This function is a first step towards trying to demix signals from 
 % adjacent rois created by the Mukamel pipeline. As feared, neighbouring
-% units contaminate each other's signal. Here, we use a suite2P - like 
-% strategy to generate a neuropile mask around each roi which we will 
-% further use to calculate a mean, surrounding fluorescence for each cell
-% in each frame. This shall hopefully demix the signals.
+% units contaminate each other's signal. This programme can be used both to
+% implement a suite2P-like approach (unique donut around ellipse) or for a
+% FISSA-like approach (donut is divided in nseg of equal area). 
 % .........................................................................
 % Purkinje cells form elongated ROIs that can be approximated with               
 % an ellipse. The programme works as described hereunder:
@@ -16,8 +15,8 @@ function [neuropile] = building_ellipses(cn,varargin)
 %       2 - Creates a wider ellipse centered on the same origin as the
 %       previously-approximated one and finds the pixels that are out 
 %       of (1) but within (2). 
-%       3 - Generates a mask out of it.
-%       4 - (optional) Producing spatial weighing of the neuropile. 
+%       3 - Generates a mask out of it ---> Suite2P. 
+%       4 - Splits the neuropile mask into (nseg) regions ---> FISSA.   
 % .........................................................................
 %
 %  ----- INPUT ----------------------
@@ -31,7 +30,7 @@ function [neuropile] = building_ellipses(cn,varargin)
 %  
 %  ----- OUTPUT ---------------------
 %
-%    neuropile      struct with fields (similar to cn)   
+%    neuropile      struct with fields (~similar to cn)   
 % .........................................................................
 
 
@@ -47,10 +46,11 @@ segment_ellipse = logical(ip.Results.segment_ellipse);
 nseg = ip.Results.nseg;
 N = cn.n_cells;
 
+%%  BUILDING THE ELLIPSE AND ITS NEUROPILE DONUT
 tic
-for roi = 3
+for roi = 1:N
     
-    if rem(roi,25) == 0 | roi == N
+    if rem(roi,25) == 0 || roi == N || roi == 1
         disp(['Building elliptic donut for ROI ',num2str(roi),' out of '...
             ,num2str(N),'.'])
         toc
@@ -78,19 +78,20 @@ for roi = 3
     geometry.xc = xc;
     geometry.yc = yc;
     
-    %calculating ellipse rotation angle
-    e2 = [0 1]; 
+    %calculating the tilt of the ellipse
     e1 = [1 0];
     if sqrt(d(2)) > sqrt(d(1))
-        v1 = V(2,1);
-        v2 = V(2,2);
-        geometry.tilt =  vector_angles2(e2,[v1,v2]);
+        v1 = V(2,1); %these are x = heights, so actually y in R^2
+        v2 = V(2,2); %these are y = width, so actually x in R^2
+        geometry.tilt = pi/2 + vector_angles2(e1,[v2,v1]);
+        Pb1b2 = [v1 , v2 ; V(1,1) , V(1,2)];
     else
         v1 = V(1,1);
         v2 = V(1,2);
-        geometry.tilt = vector_angles2(e2,[v2,v1]);
+        geometry.tilt = pi/2 + vector_angles2(e1,[v2,v1]);
+        Pb1b2 = [v1 , v2 ; V(2,1) , V(2,2)];
     end
-     
+ 
     
     %this returns the points [x,y] belonging to the perimeter
     Ssmall = border_ellipse(geometry);
@@ -138,10 +139,11 @@ for roi = 3
  neuropile.donutmask{1,roi} = np_mask;
  neuropile.donutgradient{1,roi} = gradientmask;
  
+ %% SEGMENTING THE DONUT INTO (nseg) REGIONS 
  
      if segment_ellipse
-         Pb2b1 = inv(V); 
-         %this is the transfer matrix from B1 (canonical) to B2 (ellipse)
+          Pb2b1 = inv(Pb1b2);
+          %this is the transfer matrix from B1 (canonical) to B2 (ellipse)
          % and      [x,y]b2 = Pb2b1 * [x,y]b1' (transfer relation)
          perimeter = get_ellipse_perim(geometry_enlarged);
     % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -169,40 +171,34 @@ for roi = 3
          end
     % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .    
          np_mask_seg = zeros(h,w);
-         
+
          for x = 1:h
              for y = 1:w
              % .   .   .   .   .   .   .   .   .   .   .   .   .   .   .
-             xy = [x-xc,y-yc]; %we get pixel coordinates centered on (xc,yc)
-             xy =  Pb2b1 * xy.'; %we move it to our ellipse's base (eigenvectors)
-             xy = [xy(2),xy(1)]; %reverse the order
+             xy = [x-xc,y-yc];
+             xy = Pb2b1 * xy.';
+             xy = [xy(2),xy(1)];
              
-             % Here we change base using the transfer matrix, but the issue
-             % back in the correlation matrix was that x coordinates 
-             % correspond to height (so y in R^2) and vice versa for y. So
-             % basically, V =  v11   v21     where vectors in R^2 should 
-             %                 v12   v22
-             % be (v12,v11) and (v22,v21). Therefore, after using Pb2b1, we
-             % must reverse the coordinates. Same goes for ik afterwards. 
+             theta = vector_angles2([1,0],xy);
              
-             [i,k] = get_position(0,geometry_enlarged); %calculate reference point (0-angle vector)
-             ik = [k-yc,i-xc]; %center on ellipse (xc,yc)
-             ik = Pb2b1 * ik.'; %change base
-             ik = [ik(2),ik(1)]; %reverse again
-             % .   .   .   .   .   .   .   .   .   .   .   .   .   .   .
-             theta = vector_angles2(ik,xy); %where is our pixel in polar coordinates? 
              
              seg = 1;
              while theta > angles(seg)
-                 seg = seg + 1; %while the angle is greater than angles(seg)
-             end                %we move to the next quadrant
-            np_mask_seg(x,y) = seg; 
+                 seg = seg + 1 ; 
              end
+
+            np_mask_seg(x,y) = seg; 
+            end
          end
     % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-     np_mask_seg = np_mask_seg .* np_mask; %convolute to keep the donut only 
+     np_mask_seg = np_mask_seg .* np_mask; %convolute to keep the donut only
+     themask = (nseg+1)*themask;
+     np_mask_seg = np_mask_seg + themask;
      neuropile.np_mask_seg{1,roi} = np_mask_seg;
+     neuropile.nseg = nseg;
      end
+     
+ %% GRAPHICAL PART
  
     if graphics
         figure;
@@ -236,20 +232,4 @@ for roi = 3
     end    
 end
 
-
-%% annex functions
-
     
-
-
-
-    
-
-    
-
-   
-    
-    
-
-    
-end
