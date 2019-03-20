@@ -7,5 +7,5 @@ These codes mostly take part in an attempt to create an automated pipeline for t
 Only codes with a header comprising my name were written by myself. All of them are under copyright. 
 
 
-![image](https://github.com/LeonardDupont/Master_2_project/blob/pipeline.png)
+![image](https://github.com/LeonardDupont/Master_2_project/blob/Pipeline.png)
       
