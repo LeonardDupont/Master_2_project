@@ -61,6 +61,7 @@ cl = check_empty(cl,'Z',10);
 cl = check_empty(cl,'gridbins',15);
 cl = check_empty(cl,'usedmdn',0); 
 cl = check_empty(cl,'deconv0',0);
+cl = check_empty(cl,'usedmdn',0);
 
 
 if ~isstruct(data)
@@ -95,8 +96,8 @@ if ~pixels
     %% 1 - Normalisation 
 
     tic
-    if cl.usedmdn && isfield(cn,'intensity_dmdn')
-        traces = cn.intensity_dmdn.'; 
+    if cl.usedmdn && isfield(cn,'intensity_dm')
+        traces = cn.intensity_dm.'; 
         if logical(cl.normalise)
             disp(' ------ 1 - Normalising the calcium data ------')
             switch cl.norm_method
@@ -108,7 +109,7 @@ if ~pixels
         else
             zm_calcium_data = traces; 
         end
-    elseif cl.usedmdn && ~isfield(cn,'intensity_dmdn')
+    elseif cl.usedmdn && ~isfield(cn,'intensity_dm')
         warning('No field with demixed-denoised traces in cn. Using raw intensity instead')
         cl.usedmdn = 0;
     end

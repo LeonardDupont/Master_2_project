@@ -159,25 +159,19 @@ cn = remove_bad_purkinje(cn,good_purkinje);
 nseg = 5; 
 
 neuropile = ...
-    building_ellipses(cn,'graphics',0,'segment_ellipse',1,'nseg',nseg);
+    building_ellipses(cn,'graphics',1,'segment_ellipse',1,'nseg',nseg);
 
-inputfile = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/Concatenated_optimisation.tif'; 
-neuropile = subR_fluorescence(neuropile,inputfile);
+% this step is computationaly expensive
+inputfile = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/concatenated.tif'; 
+neuropile = subR_fluorescence(neuropile,inputfile); 
 
 N = neuropile.n_cells;
 graphics = 0;
 
 % . . . . . . . . NNMF occurs here with NNDSVD initialisation . . . . . . .
 for cell = 1:N
-    
-    graphics =1 ;
+
     if graphics
-        cmap = parula(nseg+1);
-        figure
-        imagesc(neuropile.np_mask_seg{1,cell})
-        
-        figure, hold on
-        
         for seg = 1:nseg+1
             start = 1 + (seg-1)*3 ;
             stop = seg * 3;
@@ -226,9 +220,22 @@ for cell = 1:N
 
 end
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+%% RM BACKGROUND
+
+background = cn_bkg.intensity;
+
+for cell = 1:N
+    intensity = cn.intensity_dm(:,cell);
+    t = ndim
+end
+
+
+
+
+
 %% Clustering using k-means ++ and hierarchical merging
 
-% the cl struct is a cluster-option 
+% the cl struct is a cluster-option object
 clear cl
 cl.normalise = 1;
 cl.spatialplot = 1;
@@ -239,13 +246,8 @@ cl.frame_path = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registrat
 [activity_clusters,C] = hybrid_clustering(cn,cl);
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-%% Process mukamel ROIs with CNFM to demix and then deconvolve
-% DEMIXING TO BE DONE
-
-edit CNMF_E_versuchen.m
-
 %% Giving a go to the MLSpike algorithm (Deneux et al. 2016) https://www.nature.com/articles/ncomms12190
-%% a : selecting single spike events
+% a : selecting single spike events
 % we must first use a nice calcium recording vector from which we'll select
 % single spike events. In this way, MLSpike will autocalibrate. 
 calcium_data = cn.intensity_dmdn;  
@@ -253,11 +255,10 @@ roi = 45; %check with the plot_all_traces function
 good_trace = calcium_data(:,roi);
 [pks,locs] = define_single_events(good_trace);
 
-%%
 % execute separately - GetGlobal command
 sspike_events = select_single_spikes(locs);
 
-%% b : now we feed the autocalibration and deconvolute the signals 
+% b : now we feed the autocalibration and deconvolute the signals 
 clear deconvolution
 clear par
 [x,y] = size(calcium_data);
@@ -272,8 +273,6 @@ pax.realspikes = sspike_events*1/30; %the transients we deem as representative o
 pax.mlspikepar.dographsummary = false;
 
 [tauest, aest, sigmaest] = spk_autocalibration(calcium_norm,pax);
-
-
 
 % deconvolution using Viterbi algorithm
 par = tps_mlspikes('par');
@@ -316,7 +315,6 @@ tiffimage = '/Users/leonarddupont/Desktop/M2_internship/registration_template.ti
 [spatial] = spatial_rasterplot(tiffimage,deconvolution,5); 
 
 
-%% 
 %% 3. Process session data
 
 session_raw_dir = 'Z:\hugo.marques\LocomotionExperiments\RT Self-paced\Imaging\TM RAW FILES\voluntary locomotion\MC318\S4';

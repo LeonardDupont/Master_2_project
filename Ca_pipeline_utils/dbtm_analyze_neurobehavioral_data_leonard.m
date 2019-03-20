@@ -143,26 +143,28 @@ threshold = 1000;
 [~, ~, cn] = get_spikes_from_calcium_traces(cn.intensity, ops, threshold, cn, []);
 
 
-%% Manual removal of bad ROIS (execute each sequentially)
+%% Automatic removal of bad ROIs
+% We trained an SVM to be able to automatically remove bad regions of
+% interest based on shape criteria (see description of the extraction
+% function). 
 
-% 1 - manual sorting
-manual_roi_sorting(cn);
+svmname = 'SVM_Pkj.mat'; 
+embedded = load(svmname); 
+TheSVM = embedded.Pkj_sorter.ClassificationSVM; 
+criteria = extract_mask_criteria(cn); 
+labels = predict(TheSVM,criteria); 
 
-% 2 - get the sorting vector
-good_purkinje = getglobal_purkinje;
-
-% 3 - remove bad components
-cn = remove_bad_purkinje(cn,good_purkinje);
+cn = remove_bad_purkinje(cn,labels); 
 
 %% Elliptical FISSA demixing
 
 nseg = 5; 
 
 neuropile = ...
-    building_ellipses(cn,'graphics',0,'segment_ellipse',1,'nseg',nseg);
+    building_ellipses(cn,'graphics',1,'segment_ellipse',1,'nseg',nseg);
 
 % this step is computationaly expensive
-inputfile = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/Concatenated_optimisation.tif'; 
+inputfile = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/concatenated.tif'; 
 neuropile = subR_fluorescence(neuropile,inputfile); 
 
 N = neuropile.n_cells;
@@ -170,15 +172,8 @@ graphics = 0;
 
 % . . . . . . . . NNMF occurs here with NNDSVD initialisation . . . . . . .
 for cell = 1:N
-    
-    graphics =1 ;
+
     if graphics
-        cmap = parula(nseg+1);
-        figure
-        imagesc(neuropile.np_mask_seg{1,cell})
-        
-        figure, hold on
-        
         for seg = 1:nseg+1
             start = 1 + (seg-1)*3 ;
             stop = seg * 3;
@@ -227,6 +222,20 @@ for cell = 1:N
 
 end
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+%% RM BACKGROUND - will have to do this before the demixing actually 
+
+background = cn_bkg.intensity;
+t = length(background);
+
+for cell = 1:N
+    intensity = cn.intensity_dm(:,cell);
+    for frame = 1:t
+        intensity = intensity - mean(background(frame));
+    end
+    cn.intensity_dm(:,cell) = intensity;
+    clear intensity
+end
+
 %% Clustering using k-means ++ and hierarchical merging
 
 % the cl struct is a cluster-option object

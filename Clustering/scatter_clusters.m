@@ -32,8 +32,8 @@ function [] = scatter_clusters(activity_clusters,frame_path)
             colourmap = map(c,:);
 
             for roi = 1:Nrois
-                x = cluster.(roi_names{roi}).centroid(1,1);
-                y = cluster.(roi_names{roi}).centroid(2,1);
+                x = cluster.(roi_names{roi}).centroid(1);
+                y = cluster.(roi_names{roi}).centroid(2);
                 scatter(y,x,36,colourmap,'filled'), hold on
             end
 
@@ -48,13 +48,13 @@ function [] = scatter_clusters(activity_clusters,frame_path)
         Nrois = numel(fieldnames(cluster)); 
         roi_names = fieldnames(cluster);
         for roi = 1:Nrois
-            x = cluster.(roi_names{roi}).centroid(1,1);
-            y = cluster.(roi_names{roi}).centroid(2,1);
+            x = cluster.(roi_names{roi}).centroid(1);
+            y = cluster.(roi_names{roi}).centroid(2);
             scatter(y,x,36,'w','filled'), hold on
         end
         
-        xb = activity_clusters.lonely.barycenter(1,1);
-        yb = activity_clusters.lonely.barycenter(1,2);
+        xb = activity_clusters.lonely.barycenter(1);
+        yb = activity_clusters.lonely.barycenter(2);
         scatter(yb,xb,1,colourmap,'filled'), text(yb,xb,{num2str(c)},'color','w'); hold on
         % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
         
@@ -83,13 +83,13 @@ function [] = scatter_clusters(activity_clusters,frame_path)
             colourmap = map(c,:);
 
             for roi = 1:Nrois
-                x = cluster.(roi_names{roi}).centroid(1,1);
-                y = cluster.(roi_names{roi}).centroid(2,1);
+                x = cluster.(roi_names{roi}).centroid(2);
+                y = cluster.(roi_names{roi}).centroid(1);
                 scatter(y,x,36,colourmap,'filled'), hold on
             end
 
-            xb = activity_clusters.(['cluster_',num2str(c)]).barycenter(1,1);
-            yb = activity_clusters.(['cluster_',num2str(c)]).barycenter(1,2);
+            xb = activity_clusters.(['cluster_',num2str(c)]).barycenter(1);
+            yb = activity_clusters.(['cluster_',num2str(c)]).barycenter(2);
             scatter(yb,xb,1,colourmap,'filled'), text(yb,xb,{num2str(c)},'color','w'); hold on
 
         end
