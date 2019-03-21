@@ -319,9 +319,6 @@ end
     % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
         [Dmin,neighbourhood,merge_events] = ...
         merge_closest(M,neighbourhood,N, merge_events,cl.Dth); 
-        if rem(merge_events,10) == 0
-           toc 
-        end
     % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
     end
     toc    
@@ -344,7 +341,7 @@ end
     % would represent artefacts for most and we ought to deal with it. We
     % can either assign them to the closest neighbourhood (mean
     % fluorescence trace as a distance proxy) OR put them in a special
-    % list. 
+    % list, which we call 'lonely'. 
    
 
     disp([' ------ 8 - Now removing clusters comprising less than ',num2str(cl.Z),' cells --------'])
@@ -358,7 +355,7 @@ end
     for k = 1:L
         d = length(neighbourhood.(names{k}).neighB);
         if d < cl.Z
-            lonely(end+d) = neighbourhood.(names{k}).neighB;
+            lonely = cat(2,lonely,neighbourhood.(names{k}).neighB); 
             neighbourhood = rmfield(neighbourhood,names{k});
         end
     end

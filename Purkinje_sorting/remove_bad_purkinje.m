@@ -5,7 +5,7 @@ function [cn_bis] = remove_bad_purkinje(cn,good_purkinje)
     disp(['Removing fake rois based on input vector. Initial number of cells = ',num2str(N)])
     cn_bis.n_cells = sum(good_purkinje);
     cn_bis.fov_height = cn.fov_height;
-    cn_bis.foc_width = cn.fov_width;
+    cn_bis.fov_width = cn.fov_width;
     
     cell = 1;
     

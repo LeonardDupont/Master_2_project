@@ -2,7 +2,10 @@
 %  Supersiving users : Diogo, Hugo, Jorge, Leonard
 %  Building an SVM classifier based on mask shape for Purkinje refinement
 %  post Mukamel segmentation. 
+% _________________________________________________________________________
 %% Extracting shape criterion
+% Here we use 2 datasets of cells (M+N = 296) to train the algorithm, so
+% two different cn structs. 
 M = cn2.n_cells;
 N = cn.n_cells;
 
@@ -39,14 +42,12 @@ good_purkinje = getglobal_purkinje;
 good_purkinje_all(user,:) = good_purkinje;
 user = user + 1;
 
-
+%take mean over users 
 good_pkj_stat = mean(good_purkinje_all,1); 
+% keep the cells that were set as good ones in at least 60% of cases 
 good_pkj_stat(good_pkj_stat < 0.6) = 0;
 good_pkj_stat(good_pkj_stat >= 0.6) = 1;
 
-
-
- 
 %%
 
 response = good_pkj_stat;
@@ -74,7 +75,7 @@ good_smoothness = smoothness(good_pkj_stat==1);
 bad_smoothness = smoothness(good_pkj_stat==0); 
 
 
-
+%%
 figure, hold on
 scatter3(good_deviations,good_elongations,good_spreads,[],[0.6 0.2 0.8],'filled','MarkerFaceAlpha',0.75,'MarkerEdgeAlpha',1), hold on
 scatter3(bad_deviations,bad_elongations,bad_spreads,[],[1 0.2 0.3],'filled','MarkerFaceAlpha',0.75,'MarkerEdgeAlpha',1)
@@ -83,7 +84,11 @@ ylabel('elongation')
 zlabel('spread')
 legend('Real cells','Fake cells')
 grid on, hold off 
-
 %% 
 save('SVM_Pkj.mat','Pkj_sorter')
-
+%%
+%now make sure that all figures except those in the classification learner
+%are closed
+hFigs = findall(groot,'type','figure');
+print(hFigs(1),'confusion','-dpng','-r350');
+print(hFigs(2),'ROC','-dpng','-r350');
