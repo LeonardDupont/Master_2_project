@@ -27,11 +27,6 @@ function [neuropile] = building_ellipses(cn,varargin)
 %    varargin       graphics     @logical    produces plot if 1 (all rois!)
 %                   l            @double     additional width of the 2nd
 %                                            ellipse
-%               segment_ellipse  @logical    1 if you want to segment
-%                       nseg     @double     number of segments 
-%                       bkg      @logical    if the background should be 
-%                                            included
-%                       bkgmask  @matrix     cn_bkg.mask basically
 %  
 %  ----- OUTPUT ---------------------
 %
@@ -142,6 +137,9 @@ for roi = 1:N
 
  maxweight = max(gradientmask(:));
  gradientmask = gradientmask/maxweight;
+ neuropile.fov_height = h;
+ neuropile.fov_width = w;
+ neuropile.n_cells = N;
  neuropile.donutmask{1,roi} = np_mask;
  neuropile.donutgradient{1,roi} = gradientmask;
  
@@ -200,12 +198,11 @@ for roi = 1:N
      np_mask_seg = np_mask_seg .* np_mask; %convolute to keep the donut only
      themask = (nseg+1)*themask;
      np_mask_seg = np_mask_seg + themask;
-     
      if bkg && ~isempty(bkgmask)
-         np_mask_seg = np_mask_seg + (nseg+2)*bkgmask;
+        
      end
-     
      neuropile.np_mask_seg{1,roi} = np_mask_seg;
+     neuropile.nseg = nseg;
      end
      
  %% GRAPHICAL PART
@@ -241,18 +238,5 @@ for roi = 1:N
         clear figure 
     end    
 end
-
-  neuropile.fov_height = h;
-  neuropile.fov_width = w;
-  neuropile.n_cells = N;
-  neuropile.nseg = nseg;
-  if bkg
-      neuropile.bkg = true;
-  else
-      neuropile.bkg = false;
-  end
-
-end
-
 
     

@@ -12,12 +12,20 @@ function [neuropile] = subR_fluorescence(neuropile,inputfile,varargin)
 %
 %    inputfile      either path or matrix
 %
+%    varargin       bkg      @logical       1 if there is a specific
+%                                           background segment in the mask
+%                                           reference by (nseg+2)
 %  
 %  ----- OUTPUT ---------------------
 %
 %    neuropile      struct with added field 'intensity'  
 % .........................................................................
 
+ip = inputParser;
+ip.addParameter('bkg',0)
+parse(ip,varargin{:});
+
+bkg = logical(ip.Results.bkg); 
 
 tic
 disp('Reading tiff file...')
@@ -68,7 +76,7 @@ for roi = 1:N
 end
 
 
-    if neuropile.bkg
+    if bkg
         disp('Adding background.')
         background = (np_mask_seg == (nseg + 2));
         background = uint16(background);

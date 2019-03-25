@@ -156,34 +156,37 @@ labels = predict(TheSVM,criteria);
 
 cn = remove_bad_purkinje(cn,labels); 
 
+%% Check for 'border' rois (code will come one day)
+% Execute blocks sequentially
+
+clear good_purkinje
+manual_roi_sorting(cn)
+
+good_purkinje = getglobal_purkinje;
+
+cn = remove_bad_purkinje(cn,good_purkinje); 
+
 %% Elliptical FISSA demixing
 
 nseg = 5; 
 
 neuropile = ...
-    building_ellipses(cn,'graphics',1,'segment_ellipse',1,'nseg',nseg);
+    building_ellipses(cn,'graphics',0,'segment_ellipse',1,'nseg',nseg,'bkg',1,'bkgmask',cn_bkg.mask{1,1});
 
 % this step is computationaly expensive
-inputfile = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/concatenated.tif'; 
+inputfile = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/MC318_26_218_F_tied_138,000_137,000_5__concatenated_trials_1_25_27_51.tif'; 
 neuropile = subR_fluorescence(neuropile,inputfile); 
 
 N = neuropile.n_cells;
 graphics = 0;
 
+if neuropile.bkg
+    nseg = nseg+1;
+end
+
+
 % . . . . . . . . NNMF occurs here with NNDSVD initialisation . . . . . . .
 for cell = 1:N
-
-    if graphics
-        for seg = 1:nseg+1
-            start = 1 + (seg-1)*3 ;
-            stop = seg * 3;
-            subplot(nseg+1,3,start:stop)
-            plot(neuropile.intensity{seg,cell},'color',cmap(seg,:))
-            box off
-            start = stop + 1;
-            stop = stop + 1;
-        end    
-    end
     
     tic
     disp('1 -- Preparing fluorescence matrix with neuropile subregions --')
@@ -191,14 +194,20 @@ for cell = 1:N
     toc
     disp('2 -- NNDSVD-based initialisation --')
     [W0,H0] = NNDSVD(F,nseg+1,0); 
+    %estimation of weight and separated matrices
     toc
 
     % . . . . . . . . minimising |F - W*H| according to Frobenius . . . . .
     disp('3 -- Factorising using non-negative constraints --')
     [W,H] = nnmf(F,nseg+1,'w0',W0,'h0',H0); 
     toc
-    maxi = max(W(nseg+1,:));
-    wc = find(W(nseg+1,:) == maxi);
+    if neuropile.bkg
+        maxi = max(W(nseg,:));
+        wc = find(W(nseg,:) == maxi);
+    else
+        maxi = max(W(nseg+1,:));
+        wc = find(W(nseg+1,:) == maxi);
+    end
     dmxd = H(wc,:);
     
     cn.intensity_dm(:,cell) = dmxd; 
@@ -241,6 +250,8 @@ end
 % the cl struct is a cluster-option object
 clear cl
 cl.normalise = 1;
+cl.Dth = 1/0.5; 
+cl.p = 0.7; 
 cl.spatialplot = 1;
 cl.usedmdn = 0; 
 cl.frame_path = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template.tif';
