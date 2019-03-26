@@ -151,10 +151,13 @@ threshold = 1000;
 svmname = 'SVM_Pkj.mat'; 
 embedded = load(svmname); 
 TheSVM = embedded.Pkj_sorter.ClassificationSVM; 
+clear embedded
 criteria = extract_mask_criteria(cn); 
 labels = predict(TheSVM,criteria); 
 
 cn = remove_bad_purkinje(cn,labels); 
+clear labels
+clear criteria
 
 %% Check for 'border' rois (code will come one day)
 % Execute blocks sequentially
@@ -167,97 +170,103 @@ good_purkinje = getglobal_purkinje;
 cn = remove_bad_purkinje(cn,good_purkinje); 
 
 %% Elliptical FISSA demixing
+% March 2019 
 
-nseg = 5; 
 
+% . . . . . . . . This if you want to include background in demixing :
+% eroding might be an option if it's a large area  . . . . . . . . 
+msk = cn_bkg.mask{1,1};
+msk = imerode(msk,strel('disk',20));
+cn_bkg.mask{1,1} = msk; 
+
+% . . . . . . . Build ellipsoids around cell bodies (Pkj) . . . . . . . .  
+nseg = 4; 
+bkg = true;
+bkgmask = cn_bkg.mask{1,1};
+l = 7;
 neuropile = ...
-    building_ellipses(cn,'graphics',0,'segment_ellipse',1,'nseg',nseg,'bkg',1,'bkgmask',cn_bkg.mask{1,1});
+    building_ellipses(cn,'graphics',0,'segment_ellipse',1,'nseg',nseg,'bkg',bkg,'bkgmask',bkgmask,'l',l);
 
-% this step is computationaly expensive
+
+% . . . . . . . Make fluorescence traces from ellipsoid masks . . . . . . .  
 inputfile = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/MC318_26_218_F_tied_138,000_137,000_5__concatenated_trials_1_25_27_51.tif'; 
 neuropile = subR_fluorescence(neuropile,inputfile); 
 
-N = neuropile.n_cells;
-graphics = 0;
+plot_segcell_traces(neuropile,12) %for visualisation 
 
 if neuropile.bkg
     nseg = nseg+1;
 end
 
 
+N = neuropile.n_cells;
+graphics = 0;
+% . . . . . . . Normalise before demixing, otherwise artefacts . . . . . . 
+for cell = 1:N
+    for seg = 1:(nseg+1)
+        a = zero_and_max(neuropile.intensity{seg,cell}); 
+        neuropile.intensity{seg,cell} = a ; 
+    end
+end
+
+
+
 % . . . . . . . . NNMF occurs here with NNDSVD initialisation . . . . . . .
 for cell = 1:N
     
-    tic
-    disp('1 -- Preparing fluorescence matrix with neuropile subregions --')
-    F = initFISSA_mixedF(neuropile,cell);
-    toc
-    disp('2 -- NNDSVD-based initialisation --')
+   if rem(cell,10) == 0 || cell == N
+       disp(['Cell ',num2str(cell),' out of ',num2str(N),'.'])
+   end
+
+    F = initFISSA_mixedF(neuropile,cell); %building F from traces
+    
     [W0,H0] = NNDSVD(F,nseg+1,0); 
-    %estimation of weight and separated matrices
-    toc
+    %initialisation of weight and separated matrices using SVD 
+    
 
     % . . . . . . . . minimising |F - W*H| according to Frobenius . . . . .
-    disp('3 -- Factorising using non-negative constraints --')
     [W,H] = nnmf(F,nseg+1,'w0',W0,'h0',H0); 
-    toc
+   
     if neuropile.bkg
-        maxi = max(W(nseg,:));
+        maxi = max(W(nseg,:)); %then last but one segment (last = bkg)
         wc = find(W(nseg,:) == maxi);
     else
-        maxi = max(W(nseg+1,:));
+        maxi = max(W(nseg+1,:)); %then last segment
         wc = find(W(nseg+1,:) == maxi);
     end
     dmxd = H(wc,:);
     
     cn.intensity_dm(:,cell) = dmxd; 
-    disp(['Cell ',num2str(cell),' done.'])
     
-    if graphics 
-        figure, hold on
-        axh1 = subplot(2,3,1:3);
-        mixed = zero_and_max(cn.intensity(:,cell).');
-        plot(mixed,'k')
-        axis tight, box off
-        title('mixed')
-        axh2 = subplot(2,3,4:6); 
-        demixed = zero_and_max(cn.intensity_dm(:,cell).');
-        plot(demixed,'k')
-        axis tight, box off 
-        title('demixed')
-        linkaxes([axh1,axh2],'xy')
-        hold off
+    if cell == N
+        disp('NNMF done.')
     end
-
+ 
 end
-% . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-%% RM BACKGROUND - will have to do this before the demixing actually 
 
-background = cn_bkg.intensity;
-t = length(background);
-
-for cell = 1:N
-    intensity = cn.intensity_dm(:,cell);
-    for frame = 1:t
-        intensity = intensity - mean(background(frame));
-    end
-    cn.intensity_dm(:,cell) = intensity;
-    clear intensity
-end
+%visualise, compare
+compare_mx_dmx(cn,48)
+plot_segcell_traces(neuropile,48)
+plot_all_traces(cn.intensity)
+plot_all_traces(cn.intensity_dm)
 
 %% Clustering using k-means ++ and hierarchical merging
+% February 2019
 
-% the cl struct is a cluster-option object
+
 clear cl
 cl.normalise = 1;
-cl.Dth = 1/0.5; 
-cl.p = 0.7; 
+cl.K = 4;
+cl.Dth = 1/0.4; 
+cl.p = 0.6; 
 cl.spatialplot = 1;
 cl.usedmdn = 0; 
+cl.gridbins = 15; 
 cl.frame_path = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template.tif';
+video = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/MC318_26_218_F_tied_138,000_137,000_5__concatenated_trials_1_25_27_51.tif';
 
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-[activity_clusters,C] = hybrid_clustering(cn,cl);
+[activity_clusters,C] = hybrid_clustering(video,cl);
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 %% Giving a go to the MLSpike algorithm (Deneux et al. 2016) https://www.nature.com/articles/ncomms12190
@@ -344,7 +353,114 @@ concatenate_session_RTM_treadmill_data(session_output_dir, platform);
 concatenate_session_RTM_tracking_data(exp_files, tracking_dir, session_output_dir, platform);
 concatenate_session_RTM_imaging_data(exp_files, imaging_dir, session_output_dir, platform);
 
+load('/Volumes/carey/leonard.dupont/TM SESSION FILES/voluntary locomotion/MC318/S5/imaging_data.mat')
+load('/Volumes/carey/leonard.dupont/TM SESSION FILES/voluntary locomotion/MC318/S5/port_data.mat')
+load('/Volumes/carey/leonard.dupont/TM SESSION FILES/voluntary locomotion/MC318/S5/tracking_data.mat')
+load('/Volumes/carey/leonard.dupont/TM SESSION FILES/voluntary locomotion/MC318/S5/treadmill_data.mat')
 
+%%
+figure, hold on
+plot(tm.time,tm.speedM), axis tight
+calcium_data = cn.intensity_dm.';
+m_ca = mean(calcium_data,1);
+plot(im.time,m_ca)
+
+concat = [1 25 27 51];
+t_begin = find(port_data.trial_begin==1);
+tm_speedM = []; 
+for tr = 1:length(concat)
+    start = t_begin(concat(tr));
+    stop = t_begin(concat(tr)+1);
+    l = stop - start + 1;
+    kk = cat(1,tm_speedM,tm.speedM(start:stop));
+    tm_speedM = kk;
+end
+
+tm_speedMs = smoothdata(tm_speedM,'lowess',1e4);
+plot(tm_speedMs)
+
+
+figure, hold on
+plot(tm.time(1:length(tm_speedM)),tm_speedMs), axis tight
+plot(linspace(0,tm.time(length(tm_speedM)),length(m_ca)),m_ca)
+
+
+% . . . . . . . . SPEED CATEGORIES ANALYSIS . . . . . . . . . . . . . . . . 
+ncat = 4; 
+
+tm_speedMs(tm_speedMs < 0) = 0;
+maxs = max(tm_speedMs);
+mins = min(tm_speedMs);
+
+diffcat = (maxs - mins)/ncat ;
+speedcats = zeros(ncat+1,1);
+for i = 1:ncat+1
+    speedcats(i) = mins + (i-1) * diffcat;
+end
+
+speed_labels = zeros(length(tm_speedM),1);
+for j = 1:length(tm_speedM)
+    cat = 1;
+    while tm_speedMs(j) > speedcats(cat)
+        cat = cat + 1;
+    end
+    speed_labels(j) = cat;
+end
+
+plot(speed_labels)
+
+ds = 100;
+
+cmap = jet(ncat+1);
+coord = linspace(1,length(tm_speedM),length(tm_speedM));
+speed_labelds = downsample(speed_labels,ds);
+tm_speedMds = downsample(tm_speedMs,ds);
+
+point = 1;
+xc = [];
+label = 0;
+while point < length(speed_labels)
+    nlabel = speed_labels(point);
+    if nlabel ~= label
+        xc(end+1) = point;
+        label = nlabel;
+    end
+    point = point + 1;
+end
+xc(end+1) = point;
+
+figure, hold on
+
+% plot_dummies for legend
+l1 = plot([NaN,NaN], 'color', cmap(1,:));
+l2 = plot([NaN,NaN], 'color', cmap(2,:));
+l3 = plot([NaN,NaN], 'color', cmap(3,:));
+l4 = plot([NaN,NaN], 'color', cmap(4,:));
+l5 = plot([NaN,NaN], 'color', cmap(5,:));
+legend([l1, l2, l3, l4, l5], {'vlow','low','medium','fast','vfast'},'AutoUpdate','off');
+
+for k = 1:length(xc)-1
+    xplus = xc(k+1);
+    xminus = xc(k);
+    label = speed_labels(xplus-1);
+    color = cmap(label,:);
+    
+    xl = [xminus, xminus, xplus, xplus];
+    yl = [0 100 100 0];
+    a = fill(xl,yl,color); hold on,
+    a.FaceAlpha = 0.4;
+    a.EdgeColor = 'none';
+end
+        
+axis tight, hold on
+plot(tm_speedMs*(100/maxs),':','color','k','LineWidth',1)
+
+imt = linspace(0,length(tm_speedMs),length(m_ca));
+plot(imt,m_ca*(100/max(m_ca)),'color','k','LineWidth',0.001)
+box off 
+yticklabels = [];
+
+tm_speedMds = downsample(tm_speedM,round(length(tm_speedM) / length(m_ca)));
 
 
 
