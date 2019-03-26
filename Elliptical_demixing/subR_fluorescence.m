@@ -52,19 +52,23 @@ for roi = 1:N
         for frame = 1:t
             a = tiffdata(:,:,frame) .* sub_seg;
             seg_trace(1,frame) = sum(a(:)) / length(find(a ~= 0)); 
-        end    
+        end 
         
-        neuropile.intensity{seg,roi} = seg_trace; 
+        neuropile.intensity{seg,roi} = seg_trace;
+        
     end 
     
-    center_roi = (np_mask_seg == nseg+1);
+    center_roi = (np_mask_seg == (nseg+1));
     center_roi = uint16(center_roi);
     center_trace = zeros(1,t);
+        
     for frame = 1:t
-        a = tiffdata(:,:,frame) .* center_roi;
-        center_trace(1,frame) = sum(a(:)) / length(find(a~=0)); 
+       a = tiffdata(:,:,frame) .* center_roi;
+       center_trace(frame) = sum(a(:)) / length(find(a~=0)); 
     end
-    neuropile.intensity{nseg+1,roi} = center_trace;  
+    
+    neuropile.intensity{nseg+1,roi} = center_trace;
+
 end
 
 

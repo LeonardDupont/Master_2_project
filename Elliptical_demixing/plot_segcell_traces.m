@@ -17,7 +17,6 @@ function [] = plot_segcell_traces(neuropile,cells)
 %  plot with normalised calcium data
 %
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-    
 nseg = neuropile.nseg;
 
 if neuropile.bkg
@@ -27,7 +26,7 @@ end
 
 
 N = length(cells);
-cmap = parula(nseg+1); 
+cmap = hsv(nseg+1); 
 
 frames = length(neuropile.intensity{1,1}); 
 t = linspace(1,frames/30,frames); % fs = 30
@@ -60,7 +59,7 @@ for i = 1:N
         if seg ~= nseg+1
             set(gca,'xtick',[])
         else
-            ylabel('$\Delta F / F$')
+            ylabel('\Delta F_{min} / F_{max}')
             xlabel('time (s)')
         end  
         if neuropile.bkg
