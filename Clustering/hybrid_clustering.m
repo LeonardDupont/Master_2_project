@@ -565,5 +565,4 @@ function [cl] = check_empty(cl,field,default)
         cl.(field) = default;
     end
 
-
 end

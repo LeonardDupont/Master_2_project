@@ -35,7 +35,7 @@ names = fieldnames(neighbourhood);
 
                  if inter > 0
                      for i = 1:inter
-                         redundant = R1nR2(i);
+                         redundant = R1nR2(i); %roi nb
                          if w1(redundant) ~= w2(redundant)
                              closer = max(w1(redundant),w2(redundant));
                              
@@ -43,13 +43,13 @@ names = fieldnames(neighbourhood);
                              if closer == w1(redundant)
                                  index = find(R2 == redundant);
                                  R2(index) = []; %remove it from R2
-                                 w2(index) = 0;
+                                 w2(redundant) = 0;
                                  
                              %if weight bigger in R2    
                              elseif closer == w2(redundant)
                                  index = find(R1 == redundant);
                                  R1(index) = []; %remove it from R1
-                                 w1(index) = 0;
+                                 w1(redundant) = 0;
                              end
                          end
                      end

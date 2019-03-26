@@ -65,7 +65,7 @@ tic
 if deconv0
     u = numel(fieldnames(struct));
 else
-    u = deconvolution.n_cells;
+    u = struct.n_cells;
 end
 disp(' ------ 1 - Normalising the calcium data ------')
 %zm_calcium_data = zero_and_mean(calcium_data); %normalise with the mean
@@ -314,8 +314,8 @@ for k = 1:L
             activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).centroid = cn.centroid{1,nb};
             x(roi) = activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).centroid(1,1);
             y(roi) = activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).centroid(1,2);
-            activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).raw_trace = cn.intensity_dmdn(:,nb);
-            calcium_matrix(roi,:) = cn.intensity_dmdn(:,nb);
+            activity_clusters.(['cluster_',num2str(k)]).rois.(['roi_',num2str(nb)]).raw_trace = cn.intensity(:,nb);
+            calcium_matrix(roi,:) = cn.intensity(:,nb);
         end
     end
     

@@ -68,7 +68,7 @@ function [] = scatter_clusters(activity_clusters,frame_path)
     else
         
         K = numel(fieldnames(activity_clusters));
-        map = colormap(parula(K));
+        map = parula(K);
 
         h=figure('visible','off'); hold on
         ax = gca();

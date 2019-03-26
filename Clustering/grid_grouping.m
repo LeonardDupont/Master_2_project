@@ -42,9 +42,17 @@ centroid = cell(1,total);
 c = 1;
 for i = 1:gridbins
     for j = 1:gridbins
-        height = hcoord(i);
-        width = wcoord(j);
-        centroid{1,c} = [width/2 ; height/2]; %reads in height and then w
+        if i == 1
+            height = hcoord(i)/2;
+        else
+            height = (hcoord(i-1) + hcoord(i))/2;
+        end
+        if j == 1
+            width = wcoord(j)/2;
+        else
+            width = (wcoord(j-1) + wcoord(j))/2;
+        end
+        centroid{1,c} = [width , height]; %reads in height and then w
         c = c+1;
     end
 end
