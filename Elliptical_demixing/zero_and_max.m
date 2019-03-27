@@ -17,7 +17,7 @@ zm_calcium_data = zeros(x,y);
 
 for roi = 1:x
     mini = min(calcium_data(roi,:));
-    maxi = max(calcium_data(roi,:)); 
+    maxi = max(calcium_data(roi,:)-mini); 
     zm_calcium_data(roi,:) = (calcium_data(roi,:) - mini) / maxi; 
 end
 

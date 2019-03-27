@@ -429,6 +429,7 @@ while point < length(speed_labels)
 end
 xc(end+1) = point;
 
+
 figure, hold on
 
 % plot_dummies for legend
@@ -437,7 +438,7 @@ l2 = plot([NaN,NaN], 'color', cmap(2,:));
 l3 = plot([NaN,NaN], 'color', cmap(3,:));
 l4 = plot([NaN,NaN], 'color', cmap(4,:));
 l5 = plot([NaN,NaN], 'color', cmap(5,:));
-legend([l1, l2, l3, l4, l5], {'speed1','speed2','speed3','speed4','speed5'},'AutoUpdate','off');
+legend([l1, l2, l3, l4, l5], {'vlow','low','medium','fast','vfast'},'AutoUpdate','off');
 
 for k = 1:length(xc)-1
     xplus = xc(k+1);
@@ -453,13 +454,39 @@ for k = 1:length(xc)-1
 end
         
 axis tight, hold on
-plot(tm_speedMs*(100/maxs),'color','k','LineWidth',1)
+plot(tm_speedMs*(100/maxs),':','color','k','LineWidth',1)
 
 imt = linspace(0,length(tm_speedMs),length(m_ca));
-plot(imt,m_ca*(100/max(m_ca)),'color','k','LineWidth',0.005)
-
-
+plot(imt,m_ca*(100/max(m_ca)),'color','k','LineWidth',0.001)
+box off 
+yticklabels = [];
 
 tm_speedMds = downsample(tm_speedM,round(length(tm_speedM) / length(m_ca)));
 
+%%
+N = cn.n_cells;
+synchros = zeros(N,N);
+
+c=0;
+for i = 1:N
+    for j = 1:N
+        c = c+1;
+        percent = c/(N*N) * 100;
+        if rem(percent,5) == 0 || percent == 0 
+            disp([num2str(percent),'% completed.'])
+        end
+        
+        x = cn.intensity(:,i).';
+        y = cn.intensity(:,j).';
+        
+        x = zero_and_max(x);
+        y = zero_and_max(y);
+        
+        [xpk,tx] = findpeaks(x,'MinPeakHeight',0.1,'MinPeakProminence',0.05);
+        [ypk,ty] = findpeaks(y,'MinPeakHeight',0.1,'MinPeakProminence',0.05);
+
+        [es,~,~] = Event_Sync(tx,ty); 
+        synchros(i,j) = es;
+    end
+end
 

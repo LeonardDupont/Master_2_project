@@ -429,6 +429,7 @@ while point < length(speed_labels)
 end
 xc(end+1) = point;
 
+
 figure, hold on
 
 % plot_dummies for legend
@@ -462,5 +463,30 @@ yticklabels = [];
 
 tm_speedMds = downsample(tm_speedM,round(length(tm_speedM) / length(m_ca)));
 
+%%
+N = cn.n_cells;
+synchros = zeros(N,N);
 
+c=0;
+for i = 1:N
+    for j = 1:N
+        c = c+1;
+        percent = c/(N*N) * 100;
+        if rem(percent,5) == 0 || percent == 0 
+            disp([num2str(percent),'% completed.'])
+        end
+        
+        x = cn.intensity(:,i).';
+        y = cn.intensity(:,j).';
+        
+        x = zero_and_max(x);
+        y = zero_and_max(y);
+        
+        [xpk,tx] = findpeaks(x,'MinPeakHeight',0.1,'MinPeakProminence',0.05);
+        [ypk,ty] = findpeaks(y,'MinPeakHeight',0.1,'MinPeakProminence',0.05);
+
+        [es,~,~] = Event_Sync(tx,ty); 
+        synchros(i,j) = es;
+    end
+end
 
