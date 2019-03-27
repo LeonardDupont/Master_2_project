@@ -44,8 +44,8 @@ platform = get_default_widefield_rotary_treadmill_parameters(2);
 % the output file should be the parent folder of the animals
 %input_path = 'Z:\LocomotionExperiments\RT Self-paced\Imaging\TM RAW FILES\voluntary locomotion\H1\S4';
 %input_path = 'Z:\hugo.marques\LocomotionExperiments\RT Self-paced\Imaging\TM IMAGING FILES\voluntary locomotion\MC318\S2\concatenated.tif';
-input_path = 'Z:\leonard.dupont\TM RAW FILES\voluntary locomotion\MC318\S5';
-output_path = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion';
+input_path = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S2';
+output_path = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S2';
 %input_path = output_path;
 
 dirs = get_directory_tree_from_path(input_path);
@@ -79,8 +79,8 @@ process_imaging_pipeline(input_path, output_path, options);
 
 %% concatenate videos to make the analysis statistically relevant
 
-input_concatenate = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5';
-output_concatenate = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5';
+input_concatenate = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S2';
+output_concatenate = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S2';
 
 N = 5 ; %concatenation group size
 
@@ -88,7 +88,7 @@ concatenate_mukamel(N,input_concatenate,output_concatenate)
 
 %% Median filtering (Diogo) : removing the shutter noise by sacrifying temporal precision at first (3-frames sliding window)
 
-input_median = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5\MC318_26_218_F_tied_138,000_137,000_5__concatenated_trials_1_25_27_51.tif'; 
+input_median = 'MC318_26_199_M_tied_134,000_141,000_2__concatenated_trials_15_16_1_27_29.tif'; 
 
 [~] = med_filter_calcium(input_median); 
 
@@ -97,11 +97,11 @@ input_median = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5
 %TODO: consider concatenating a few videos beforehand (see above)
 options.nPCs = 400;
 options.used_PCs = 1:350; % if this value is empty the algorithm prompts the user for manual selection
-options.mu = 0.5;
+options.mu = 0.15;
 
-cells_sort_file_muk = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5\MC318_26_218_F_tied_138,000_137,000_5__concatenated_trials_1_25_27_51_MEDFILT.tif';
+cells_sort_file_muk = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5\MC318_26_218_F_tied_138,000_137,000_5__concatenated_trials_1_25_27_51.tif';
 cells_sort_file_reg = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5\MC318_26_218_F_tied_138,000_137,000_5__concatenated_trials_1_25_27_51.tif'; 
-cells_sort_out_folder = 'Z:\leonard.dupont\TM IMAGING PROCESSING FILES\voluntary locomotion\MC318\S5\mukamel_concatenated2';
+cells_sort_out_folder = 'Z:\leonard.dupont\TM IMAGING PROCESSING FILES\voluntary locomotion\MC318\S4\mukamel_concatenated_mu0.15';
 create_folder_path(cells_sort_out_folder);
 
 
@@ -122,12 +122,12 @@ cn_bkg_rois = convert_manual_rois_to_carey_neuron(bkg);
 [~, ~, cn_bkg] = get_carey_neurons_mean_intensity(cells_sort_file_reg, cn_bkg_rois, [cells_sort_out_folder,'\','carey_neurons_bkg.mat']);
 
 %plot the calcium traces
-plot_all_traces(cn)
+plot_all_traces(cn.intensity)
 
-data = load('Z:\leonard.dupont\TM IMAGING PROCESSING FILES\voluntary locomotion\MC318\S5\mukamel_concatenated2\carey_neurons.mat');
+data = load('Z:\leonard.dupont\TM IMAGING PROCESSING FILES\voluntary locomotion\MC318\S4\mukamel_concatenated2\carey_neurons.mat');
 cn = data.cn;
 
-data_bkg = load('Z:\leonard.dupont\TM IMAGING PROCESSING FILES\voluntary locomotion\MC318\S5\mukamel_concatenated2\carey_neurons_bkg.mat');
+data_bkg = load('Z:\leonard.dupont\TM IMAGING PROCESSING FILES\voluntary locomotion\MC318\S4\mukamel_concatenated2\carey_neurons_bkg.mat');
 cn_bkg = data_bkg.cn;
 
 
@@ -136,9 +136,9 @@ cn_bkg = data_bkg.cn;
 ops.fs = 30;
 ops.recomputeKernel = 0;
 ops.sensorTau = 0.7;
-ops.estimateNeuropil = 1;
-ops.deconvType = 'L0'; 
-%ops.deconvType = 'OASIS';
+ops.estimateNeuropil = 0;
+%ops.deconvType = 'L0'; 
+ops.deconvType = 'OASIS';
 threshold = 1000;
 [~, ~, cn] = get_spikes_from_calcium_traces(cn.intensity, ops, threshold, cn, []);
 
@@ -218,8 +218,23 @@ for cell = 1:N
        disp(['Cell ',num2str(cell),' out of ',num2str(N),'.'])
    end
 
-    F = initFISSA_mixedF(neuropile,cell); %building F from traces
+    if graphics
+        for seg = 1:nseg+1
+            start = 1 + (seg-1)*3 ;
+            stop = seg * 3;
+            subplot(nseg+1,3,start:stop)
+            plot(neuropile.intensity{seg,cell},'color',cmap(seg,:))
+            box off
+            start = stop + 1;
+            stop = stop + 1;
+        end    
+    end
     
+    tic
+    disp('1 -- Preparing fluorescence matrix with neuropile subregions --')
+    F = initFISSA_mixedF(neuropile,cell);
+    toc
+    disp('2 -- NNDSVD-based initialisation --')
     [W0,H0] = NNDSVD(F,nseg+1,0); 
     %initialisation of weight and separated matrices using SVD 
     
@@ -238,8 +253,20 @@ for cell = 1:N
     
     cn.intensity_dm(:,cell) = dmxd; 
     
-    if cell == N
-        disp('NNMF done.')
+    if graphics 
+        figure, hold on
+        axh1 = subplot(2,3,1:3);
+        mixed = zero_and_max(cn.intensity(:,cell).');
+        plot(mixed,'k')
+        axis tight, box off
+        title('mixed')
+        axh2 = subplot(2,3,4:6); 
+        demixed = zero_and_max(cn.intensity_dm(:,cell).');
+        plot(demixed,'k')
+        axis tight, box off 
+        title('demixed')
+        linkaxes([axh1,axh2],'xy')
+        hold off
     end
  
 end
@@ -340,10 +367,10 @@ tiffimage = '/Users/leonarddupont/Desktop/M2_internship/registration_template.ti
 
 %% 3. Process session data
 
-session_raw_dir = 'Z:\hugo.marques\LocomotionExperiments\RT Self-paced\Imaging\TM RAW FILES\voluntary locomotion\MC318\S4';
-tracking_dir = 'Z:\hugo.marques\LocomotionExperiments\RT Self-paced\Imaging\TM TRACKING FILES\voluntary locomotion\MC318\S4';
-imaging_dir = 'Z:\hugo.marques\LocomotionExperiments\RT Self-paced\Imaging\TM IMAGING FILES\voluntary locomotion\MC318\S4';
-session_output_dir = 'Z:\hugo.marques\LocomotionExperiments\RT Self-paced\Imaging\TM SESSION FILES\voluntary locomotion\';
+session_raw_dir = 'Z:\leonard.dupont\TM RAW FILES\voluntary locomotion\MC318\S5';
+tracking_dir = 'Z:\leonard.dupont\TM TRACKED FILES\MC318\S5';
+imaging_dir = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5';
+session_output_dir = 'Z:\leonard.dupont\TM SESSION FILES\voluntary locomotion\';
 
 [exp_files] = get_experimental_files_ordered_by_animal_session_and_trial(session_raw_dir, '*.tdms');
 platform = get_default_widefield_rotary_treadmill_parameters(2);
@@ -365,19 +392,7 @@ calcium_data = cn.intensity_dm.';
 m_ca = mean(calcium_data,1);
 plot(im.time,m_ca)
 
-concat = [1 25 27 51];
-t_begin = find(port_data.trial_begin==1);
-tm_speedM = []; 
-for tr = 1:length(concat)
-    start = t_begin(concat(tr));
-    stop = t_begin(concat(tr)+1);
-    l = stop - start + 1;
-    kk = cat(1,tm_speedM,tm.speedM(start:stop));
-    tm_speedM = kk;
-end
 
-tm_speedMs = smoothdata(tm_speedM,'lowess',1e4);
-plot(tm_speedMs)
 
 
 figure, hold on

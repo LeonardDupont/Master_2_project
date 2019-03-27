@@ -1,5 +1,6 @@
 function [] = concatenate_mukamel(N,input,output)
-% To apply before applying the Mukamel PCA-ICA bits.  February 2019, Carey Lab
+% To apply before applying the Mukamel PCA-ICA bits.  February 2019, Carey
+% Lab - leonard.dupont@ens.fr
 %
 %  INPUT
 %

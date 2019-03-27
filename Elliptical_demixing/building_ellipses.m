@@ -57,7 +57,7 @@ bkgmask = ip.Results.bkgmask;
 
 %%  BUILDING THE ELLIPSE AND ITS NEUROPILE DONUT
 tic
-for roi = 1:N
+for roi = 1
     
     if rem(roi,25) == 0 || roi == N || roi == 1
         disp(['Building elliptic donut for ROI ',num2str(roi),' out of '...
@@ -97,7 +97,7 @@ for roi = 1:N
     else
         v1 = V(1,1);
         v2 = V(1,2);
-        geometry.tilt = pi/2 + vector_angles2(e1,[v2,v1]);
+        geometry.tilt = pi/2  + vector_angles2(e1,[v2,v1]);
         Pb1b2 = [v1 , v2 ; V(2,1) , V(2,2)];
     end
  

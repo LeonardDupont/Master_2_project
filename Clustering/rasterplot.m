@@ -3,11 +3,8 @@ function [] = rasterplot(data, varargin)
 % February 2019 - Carey lab (LD)
 % INPUT
 %
-%    data       we might make it more flexible, but right now the function     
-%               only works with a struct following the deconvolution format
-%               with fields:
-%
-%               struct >   roi_%(nb)     >   spiketimes(S,1)
+%    data       n * p binary matrix (timepoints w\ 1 if spike)
+%               n = nb of cells, p = datapoints
 %
 % OUTPUT
 % 
@@ -26,8 +23,7 @@ spacing = ip.Results.spacing;
 colour = ip.Results.color;
 
 %%
-    deconvolution = data;
-    N = numel(fieldnames(deconvolution)); %find the nb of ROIs 
+   [N,~] = size(data); 
     
     figure, hold on
     xlabel('Time (s)')
@@ -37,7 +33,8 @@ colour = ip.Results.color;
     
     for roi = 1:N
         
-        spktimes = deconvolution.(['roi_',num2str(roi)]).spiketimes; %each round, we get the spike times 
+        estimated = data(roi,:);
+        spktimes = find(estimated==1); %each round, we get the spike times 
         y = [(roi-1)*height + roi*spacing , roi*height + roi*spacing]; %we prepare 2 coordinates in y (we're gonna draw a vertical line: spike)
         middles(roi) = roi*height + roi*spacing - 1/2*height; %get the middle coordinate of this line over y to label the ROI
         labels(roi) = num2cell(roi);

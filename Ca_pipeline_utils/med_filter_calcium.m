@@ -5,9 +5,11 @@ function [medfilt_data] = med_filter_calcium(input)
 
 
 data = imread_tifflib(input); 
+data = double(data); 
 medfilt_data = medfilt1(data,5,[],3); 
 
 C = strsplit(input,'.'); 
-output = [C{1},'.',C{2},'_MEDFILT.',C{3}]; 
+output = [C{1},'_MEDFILT.',C{2}]; 
 
+medfilt_data = uint16(medfilt_data); 
 save_tiff(medfilt_data,output)
