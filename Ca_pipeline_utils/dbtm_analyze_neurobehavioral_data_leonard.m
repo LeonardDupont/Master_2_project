@@ -496,3 +496,95 @@ for i = 1:N
     toc
 end
 
+%%
+distMAT = zeros(N,N); 
+for i = 1:N
+    parfor j = 1:N
+        distMAT(i,j) = 1 - synchMAT(i,j);
+    end
+end
+
+
+y = squareform(distMAT);
+Z = linkage(distMAT,'ward'); 
+dendrogram(Z)
+T = cluster(Z,'MaxClust',5);
+
+
+Nclust = 5;
+clear activity_cluster
+clear reorganised
+reorganised = [];
+for k = 1:Nclust
+    rois = find(T == k);
+    l = length(rois);
+    activity_cluster.clusterregions{1,k} = rois;
+    for i = 1:l
+        reorganised(end+1) = rois(i);
+        activity_cluster.centroid{k,i} = cn.centroid{1,rois(i)};
+        activity_cluster.mask{k,i} = cn.mask{1,rois(i)};
+    end
+end
+
+organisedMAT = zeros(N,N);
+for k = 1:N
+    r1 = reorganised(k);
+    for j = 1:N
+        r2 = reorganised(j);
+        organisedMAT(k,j) = distMAT(r1,r2);
+    end
+end
+
+imagesc(organisedMAT)
+
+
+ registeredtif = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template.tif';
+
+ %% scatter
+ h=figure('visible','off'); hold on
+ ax = gca();
+ hold(ax, 'on');
+ title('Spatial distribution of clustered regions')
+ cmap = jet(Nclust);
+ 
+ for k = 1:Nclust
+     L = length(activity_cluster.clusterregions{1,k});
+     ccolor = cmap(k,:);
+     
+     for roi = 1:L
+         posi = activity_cluster.centroid{k,roi};
+         x = posi(1);
+         y = posi(2);
+         scatter(y,x,36,ccolor,'filled'), hold on
+     end
+ end
+ 
+ 
+ 
+ 
+ imh = imshow(registeredtif,'Parent',ax);
+ uistack(imh,'bottom')
+ hold(ax,'off')
+        
+ set(h,'visible','on'); hold off 
+
+ %% masks
+ imh = imshow(registeredtif); hold on,
+ title('Spatial distribution of clustered regions')
+ cmap = jet(Nclust);
+ S = size(cn.mask{1,1});
+ for k = 1:Nclust
+     L = length(activity_cluster.clusterregions{1,k});
+     c = cmap(k,:);
+     full = cat(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
+     
+     for roi = 1:L
+         I = activity_cluster.mask{k,roi};
+         h = imshow(full); hold on 
+         set(h, 'AlphaData', I*0.35) , hold on
+     end
+ end
+ 
+hold off  
+
+
