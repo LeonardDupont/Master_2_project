@@ -57,7 +57,7 @@ bkgmask = ip.Results.bkgmask;
 
 %%  BUILDING THE ELLIPSE AND ITS NEUROPILE DONUT
 tic
-for roi = 1
+for roi = 1:N
     
     if rem(roi,25) == 0 || roi == N || roi == 1
         disp(['Building elliptic donut for ROI ',num2str(roi),' out of '...
