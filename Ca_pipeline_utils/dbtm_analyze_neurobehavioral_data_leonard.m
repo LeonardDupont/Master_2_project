@@ -130,19 +130,6 @@ cn = data.cn;
 data_bkg = load('Z:\leonard.dupont\TM IMAGING PROCESSING FILES\voluntary locomotion\MC318\S4\mukamel_concatenated2\carey_neurons_bkg.mat');
 cn_bkg = data_bkg.cn;
 
-
-% Convert calcium traces to spikes - not useful if using the following
-% MLSpike algorithm 
-ops.fs = 30;
-ops.recomputeKernel = 0;
-ops.sensorTau = 0.7;
-ops.estimateNeuropil = 0;
-%ops.deconvType = 'L0'; 
-ops.deconvType = 'OASIS';
-threshold = 1000;
-[~, ~, cn] = get_spikes_from_calcium_traces(cn.intensity, ops, threshold, cn, []);
-
-
 %% Automatic removal of bad ROIs
 % We trained an SVM to be able to automatically remove bad regions of
 % interest based on shape criteria (see description of the extraction
@@ -385,7 +372,7 @@ load('/Volumes/carey/leonard.dupont/TM SESSION FILES/voluntary locomotion/MC318/
 load('/Volumes/carey/leonard.dupont/TM SESSION FILES/voluntary locomotion/MC318/S5/tracking_data.mat')
 load('/Volumes/carey/leonard.dupont/TM SESSION FILES/voluntary locomotion/MC318/S5/treadmill_data.mat')
 
-%%
+%% Initial RTM analysis (26/03/2019)
 figure, hold on
 plot(tm.time,tm.speedM), axis tight
 calcium_data = cn.intensity_dm.';
@@ -478,30 +465,34 @@ yticklabels = [];
 
 tm_speedMds = downsample(tm_speedM,round(length(tm_speedM) / length(m_ca)));
 
-%%
+%% Deconvolution 
+ops.fs = 30;
+ops.recomputeKernel = 0;
+ops.sensorTau = 0.7;
+ops.estimateNeuropil = 0;
+ops.deconvType = 'L0'; 
+%ops.deconvType = 'OASIS';
+threshold = 1000;
+[~, ~, cn] = get_spikes_from_calcium_traces(cn.intensity, ops, threshold, cn, []);
+%[~, ~, cn] = get_spikes_from_calcium_traces(cn.intensity_dm, ops, threshold, cn, []);
+
+
+%visual input 
+rasterplot(cn.spikes.')
+compare_spk2trace(cn,[10,12]);
+
+%% Now that we have spiketimes, we can build a measure of synchrony
+
 N = cn.n_cells;
-synchros = zeros(N,N);
-
-c=0;
+synchMAT = zeros(N,N);
+tic
 for i = 1:N
-    for j = 1:N
-        c = c+1;
-        percent = c/(N*N) * 100;
-        if rem(percent,5) == 0 || percent == 0 
-            disp([num2str(percent),'% completed.'])
-        end
-        
-        x = cn.intensity(:,i).';
-        y = cn.intensity(:,j).';
-        
-        x = zero_and_max(x);
-        y = zero_and_max(y);
-        
-        [xpk,tx] = findpeaks(x,'MinPeakHeight',0.1,'MinPeakProminence',0.05);
-        [ypk,ty] = findpeaks(y,'MinPeakHeight',0.1,'MinPeakProminence',0.05);
-
-        [es,~,~] = Event_Sync(tx,ty); 
-        synchros(i,j) = es;
+    x = cn.spikes(:,i).';
+    parfor j = 1:N
+        y = cn.spikes(:,j).';
+        [Q,~,~] = est_trace_synchrony(x,y);
+        synchMAT(i,j) = Q;
     end
+    toc
 end
 
