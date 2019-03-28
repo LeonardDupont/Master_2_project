@@ -37,9 +37,9 @@ function [] = scatter_clusters(activity_clusters,frame_path)
                 scatter(y,x,36,colourmap,'filled'), hold on
             end
 
-            xb = activity_clusters.(['cluster_',num2str(c)]).barycenter(1,1);
-            yb = activity_clusters.(['cluster_',num2str(c)]).barycenter(1,2);
-            scatter(yb,xb,1,colourmap,'filled'), text(yb,xb,{num2str(c)},'color','w'); hold on
+            %xb = activity_clusters.(['cluster_',num2str(c)]).barycenter(1,1);
+            %yb = activity_clusters.(['cluster_',num2str(c)]).barycenter(1,2);
+            %scatter(yb,xb,1,colourmap,'filled'), text(yb,xb,{num2str(c)},'color','w'); hold on
 
         end
         
@@ -73,6 +73,9 @@ function [] = scatter_clusters(activity_clusters,frame_path)
         h=figure('visible','off'); hold on
         ax = gca();
         hold(ax, 'on');
+        imh = imshow(frame_path,'Parent',ax);
+        uistack(imh,'bottom')
+        hold(ax,'off')
         title('Spatial distribution of clustered regions')
 
         for c = 1:K
@@ -88,15 +91,13 @@ function [] = scatter_clusters(activity_clusters,frame_path)
                 scatter(y,x,36,colourmap,'filled'), hold on
             end
 
-            xb = activity_clusters.(['cluster_',num2str(c)]).barycenter(1);
-            yb = activity_clusters.(['cluster_',num2str(c)]).barycenter(2);
-            scatter(yb,xb,1,colourmap,'filled'), text(yb,xb,{num2str(c)},'color','w'); hold on
+            %xb = activity_clusters.(['cluster_',num2str(c)]).barycenter(1);
+            %yb = activity_clusters.(['cluster_',num2str(c)]).barycenter(2);
+            %scatter(yb,xb,1,colourmap,'filled'), text(yb,xb,{num2str(c)},'color','w'); hold on
 
         end
         
-        imh = imshow(frame_path,'Parent',ax);
-        uistack(imh,'bottom')
-        hold(ax,'off')
+        
         
         set(h,'visible','on'); hold off 
         
