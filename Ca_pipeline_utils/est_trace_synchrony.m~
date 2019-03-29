@@ -1,4 +1,4 @@
-function [Q,Qprime,qprime] = est_trace_synchrony(x,y,varargin)
+function [Q,Qprime,qprime,taulist] = est_trace_synchrony(x,y,varargin)
 %% March 2019 - CareyLab - leonard.dupont@ens.fr
 % .........................................................................
 % This function takes two lists x and y of size t (datapoints acquired at
@@ -31,13 +31,14 @@ derivative = logical(ip.Results.derivative);
 
 tx = find(x==1);
 ty = find(y==1);
-mx = length(tx); %nb of x events
-my = length(ty); %nb of y events
 
 dn = 5;
 
 cxy = get_c(tx,ty);
 cyx = get_c(ty,tx);
+
+mx = length(tx); %nb of x events
+my = length(ty); %nb of y events
 
 Q = (cxy + cyx)/sqrt(mx*my);  %simple and straightforward
 
@@ -72,19 +73,23 @@ if derivative
         
         dnx = length(find(x(windows(w+1):windows(w+2)) == 1)); 
         dny = length(find(y(windows(w+1):windows(w+2)) == 1));
+        %finding number of events between the 2 Qvals that we compare
 
         if dnx*dny ~=0  
-            Qprime(w) = dQ/sqrt(dnx*dny);  
+            Qprime(w) = dQ/sqrt(dnx*dny); % if dividing is an option
         else
             Qprime(w) = 0;
         end
     end
 else
     Qprime = [];
-    qprime = [];
+    qprime = []; %if the derivative was not asked for
 end
 
-
+%% Side functions 
+% get_c : will calculate the synchrony of the two event trains
+% stpfc : simple (actually could use (n>0) to get a logical) function that
+%         outputs 1 if x > 0, 0 otherwise. 
 
     function [cxy] = get_c(tx,ty,n)
         
