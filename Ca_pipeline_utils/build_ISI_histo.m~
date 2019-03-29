@@ -15,9 +15,9 @@ function [ISIfreq, average_spkrate] = build_ISI_histo(data,varargin)
 % the function plots a histogram of ISI distribution probabilities
 
 
-fs = 30; %30 Hz default 
+dt = 1/30; %30 Hz default 
 ip = inputParser; 
-ip.addParameter('fs',fs, @isscalar); %the framerate if different from the default one 
+ip.addParameter('dt',dt, @isscalar); %the framerate if different from the default one 
 ip.addParameter('individual',0); %if you feed the function with the struct but you want to calculate separate histograms for each ROI
 ip.addParameter('graphics',1); %if you want to plot the histogram or not (might no want to if individual is 1)
 ip.addParameter('bw',0.1, @double); %the bin width in the histogram
@@ -25,7 +25,7 @@ ip.addParameter('color','k')
 ip.addParameter('rmhigh',[])
 parse(ip, varargin{:});
 
-fs = ip.Results.fs;
+dt = ip.Results.dt;
 individual = logical(ip.Results.individual);
 graphics = logical(ip.Results.graphics);
 bw = ip.Results.bw;
@@ -48,7 +48,7 @@ if isstruct(data)
             ISIfreq = zeros(length(spike_times)-1,1);
             
             for t=1:length(spike_times)-1
-                ISIfreq(t) = fs/(spike_times(t+1) - spike_times(t));
+                ISIfreq(t) = dt/(spike_times(t+1) - spike_times(t));
             end
             
                             if ~isempty(rmhigh)
@@ -76,7 +76,7 @@ if isstruct(data)
             spike_times = find(spikes == 1);
             for t=1:length(spike_times)-1
                 ISI = spike_times(t+1) - spike_times(t);
-                ISIfreq = [ISIfreq, fs/ISI]; 
+                ISIfreq = [ISIfreq, 1/ISI]; 
             end
             
                             if ~isempty(rmhigh)
@@ -101,7 +101,7 @@ else %then it's just a vector
     ISIfreq = zeros(length(data)-1,1);
     spike_times = find(data == 1); 
     for t = 1:length(data)-1
-        ISIfreq(t) = fs/(spike_times(t+1)-spike_times(t));
+        ISIfreq(t) = 1/(spike_times(t+1)-spike_times(t));
     end
     
                             if ~isempty(rmhigh)
