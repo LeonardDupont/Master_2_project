@@ -293,7 +293,8 @@ good_trace = calcium_data(:,roi);
 [pks,locs] = define_single_events(good_trace);
 
 % execute separately - GetGlobal command
-sspike_events = select_single_spikes(locs);
+eventsamp = getGlobal_yesevents; 
+se_amp = mean(eventsamp); 
 
 % b : now we feed the autocalibration and deconvolute the signals 
 clear deconvolution
@@ -466,17 +467,27 @@ yticklabels = [];
 tm_speedMds = downsample(tm_speedM,round(length(tm_speedM) / length(m_ca)));
 
 %% Deconvolution 
+
+% 1 - defining single events to adjust the threshold
+plot_all_traces(cn.intensity)
+se_traces = [23 24]; %list with a few traces showing single events
+define_single_events(cn,se_traces)
+
+eventsamp = getGlobal_yesevents; 
+se_amp = mean(eventsamp); %mean single-event amplitude
+
+% 2 - deconvolution using L0 norm (what works best right now)
 ops.fs = 30;
-ops.recomputeKernel = 0;
+ops.recomputeKernel =0;
 ops.sensorTau = 0.7;
 ops.estimateNeuropil = 0;
 ops.deconvType = 'L0'; 
 %ops.deconvType = 'OASIS';
-threshold = 1000;
-[~, ~, cn] = get_spikes_from_calcium_traces(cn.intensity, ops, threshold, cn, []);
-%[~, ~, cn] = get_spikes_from_calcium_traces(cn.intensity_dm, ops, threshold, cn, []);
+threshold = se_amp;
+[~, ~, ~, cn] = get_spikes_from_calcium_traces(cn.intensity, ops, threshold, cn, []);
+%[~, ~, ~, cn] = get_spikes_from_calcium_traces(cn.intensity_dm, ops, threshold, cn, []);
 
-
+compare_spk2trace(cn,1)
 %visual input 
 rasterplot(cn.spikes.')
 compare_spk2trace(cn,[10,12]);
@@ -493,7 +504,10 @@ for i = 1:N
         [Q,~,~] = est_trace_synchrony(x,y);
         synchMAT(i,j) = Q;
     end
-    toc
+    percent = i*100/94; 
+    if rem(floor(percent),5) == 0
+        disp([num2str(floor(percent)),'% done.'])
+    end
 end
 
 %%
@@ -504,14 +518,17 @@ for i = 1:N
     end
 end
 
-
+clear y
+clear Z
+clear T
+clear H
 y = squareform(distMAT);
-Z = linkage(distMAT,'ward'); 
-dendrogram(Z)
-T = cluster(Z,'MaxClust',5);
+Z = linkage(y,'average'); 
+H = dendrogram(Z,'Orientation','left','ColorThreshold','default'); 
+T = cluster(Z,'Cutoff',0.45,'criterion','distance');
+Nclust = max(T);
 
-
-Nclust = 5;
+N = cn.n_cells; 
 clear activity_cluster
 clear reorganised
 reorganised = [];
@@ -535,62 +552,12 @@ for k = 1:N
     end
 end
 
-imagesc(organisedMAT)
-
-
- registeredtif = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template.tif';
-
- %% scatter
- h=figure('visible','off'); hold on
- ax = gca();
- hold(ax, 'on');
- title('Spatial distribution of clustered regions')
- cmap = jet(Nclust);
- 
- for k = 1:Nclust
-     L = length(activity_cluster.clusterregions{1,k});
-     ccolor = cmap(k,:);
-     
-     for roi = 1:L
-         posi = activity_cluster.centroid{k,roi};
-         x = posi(1);
-         y = posi(2);
-         scatter(y,x,36,ccolor,'filled'), hold on
-     end
- end
- 
- 
- 
- 
- imh = imshow(registeredtif,'Parent',ax);
- uistack(imh,'bottom')
- hold(ax,'off')
-        
- set(h,'visible','on'); hold off 
-
- %% masks
- imh = imshow(registeredtif); hold on,
- title('Spatial distribution of clustered regions')
- cmap = jet(Nclust);
- S = size(cn.mask{1,1});
- for k = 1:Nclust
-     L = length(activity_cluster.clusterregions{1,k});
-     c = cmap(k,:);
-     full = cat(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
-     
-     for roi = 1:L
-         I = activity_cluster.mask{k,roi};
-         h = imshow(full); hold on 
-         set(h, 'AlphaData', I*0.35) , hold on
-     end
- end
- 
-hold off  
+figure, imagesc(organisedMAT), title('Distance matrix with clustering-based grouping')
+figure, imagesc(distMAT), title('Distance matrix with no grouping')
 
 %%
- registeredtif = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template.tif';
- %path to registration template
- 
+registeredtif = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5\registration_template.tif';
+
  imh = imshow(registeredtif); hold on,
  title('Spatial distribution of clustered regions')
  cmap = jet(Nclust);
