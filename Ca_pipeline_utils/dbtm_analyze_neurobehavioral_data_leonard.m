@@ -555,8 +555,10 @@ for k = 1:N
     end
 end
 
-figure, imagesc(organisedMAT), title('Distance matrix with clustering-based grouping')
-figure, imagesc(distMAT), title('Distance matrix with no grouping')
+figure, imagesc(organisedMAT), title('Distance matrix with clustering-based grouping'), colorbar
+figure, imagesc(distMAT), title('Distance matrix with no grouping'), colorbar
+figure, imagesc(chanceMAT), title('Matrix showing P_{chance} with no grouping'), colorbar
+figure, imagesc(orgchanceMAT), title('Matrix showing P_{chance} with clustering-based grouping'), colorbar
 
 %%
 registeredtif = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template copy.tif';
