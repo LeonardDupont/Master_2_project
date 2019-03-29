@@ -1,4 +1,4 @@
-function [Q,Qprime,qprime] = est_trace_synchrony(x,y,varargin)
+function [Q,Qprime,qprime,taumin] = est_trace_synchrony(x,y,varargin)
 %% March 2019 - CareyLab - leonard.dupont@ens.fr
 % .........................................................................
 % This function takes two lists x and y of size t (datapoints acquired at
@@ -31,13 +31,16 @@ derivative = logical(ip.Results.derivative);
 
 tx = find(x==1);
 ty = find(y==1);
-mx = length(tx); %nb of x events
-my = length(ty); %nb of y events
 
 dn = 5;
 
-cxy = get_c(tx,ty);
-cyx = get_c(ty,tx);
+[cxy,tauminxy] = get_c(tx,ty);
+[cyx,tauminyx] = get_c(ty,tx);
+
+taumin = min(tauminxy,tauminyx);
+
+mx = length(tx); %nb of x events
+my = length(ty); %nb of y events
 
 Q = (cxy + cyx)/sqrt(mx*my);  %simple and straightforward
 
@@ -90,14 +93,14 @@ end
 % stpfc : simple (actually could use (n>0) to get a logical) function that
 %         outputs 1 if x > 0, 0 otherwise. 
 
-    function [cxy] = get_c(tx,ty,n)
+    function [cxy,taumin] = get_c(tx,ty,n)
         
         if nargin < 3
             usestep = false;
         else
             usestep = true;
         end
-        
+        taumin = 1000;
         mx = length(tx);
         my = length(ty);
         cxy = 0;
@@ -121,6 +124,10 @@ end
                 
                 all = cat(2,alli,allj);
                 tau = min(all)/2;
+                
+                if tau < taumin
+                    taumin = tau;
+                end
                 
                 dt = tx(i) - ty(j);
                 if dt>0 && dt<tau
