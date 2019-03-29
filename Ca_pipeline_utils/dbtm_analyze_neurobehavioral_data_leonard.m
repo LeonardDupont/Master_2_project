@@ -267,7 +267,6 @@ plot_all_traces(cn.intensity_dm)
 %% Clustering using k-means ++ and hierarchical merging
 % February 2019
 
-
 clear cl
 cl.normalise = 1;
 cl.K = 4;
@@ -493,16 +492,17 @@ rasterplot(cn.spikes.')
 compare_spk2trace(cn,[10,12]);
 
 %% Now that we have spiketimes, we can build a measure of synchrony
-
 N = cn.n_cells;
 synchMAT = zeros(N,N);
+chanceMAT = zeros(N,N);
 tic
 for i = 1:N
     x = cn.spikes(:,i).';
     parfor j = 1:N
         y = cn.spikes(:,j).';
-        [Q,~,~] = est_trace_synchrony(x,y);
+        [Q,~,~,taumin] = est_trace_synchrony(x,y);
         synchMAT(i,j) = Q;
+        chanceMAT(i,j) = est_synchrony_reliability(x,y,taumin); 
     end
     percent = i*100/94; 
     if rem(floor(percent),5) == 0
@@ -522,10 +522,11 @@ clear y
 clear Z
 clear T
 clear H
+clear cluster
 y = squareform(distMAT);
 Z = linkage(y,'average'); 
 H = dendrogram(Z,'Orientation','left','ColorThreshold','default'); 
-T = cluster(Z,'Cutoff',0.45,'criterion','distance');
+T = cluster(Z,'Cutoff',0.5,'criterion','distance');
 Nclust = max(T);
 
 N = cn.n_cells; 
@@ -544,11 +545,13 @@ for k = 1:Nclust
 end
 
 organisedMAT = zeros(N,N);
+orgchanceMAT = zeros(N,N);
 for k = 1:N
     r1 = reorganised(k);
     for j = 1:N
         r2 = reorganised(j);
         organisedMAT(k,j) = distMAT(r1,r2);
+        orgchanceMAT(k,j) = chanceMAT(r1,r2);
     end
 end
 
@@ -556,7 +559,7 @@ figure, imagesc(organisedMAT), title('Distance matrix with clustering-based grou
 figure, imagesc(distMAT), title('Distance matrix with no grouping')
 
 %%
-registeredtif = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5\registration_template.tif';
+registeredtif = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template copy.tif';
 
  imh = imshow(registeredtif); hold on,
  title('Spatial distribution of clustered regions')

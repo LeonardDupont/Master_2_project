@@ -20,6 +20,7 @@ function [Q,Qprime,qprime,taumin] = est_trace_synchrony(x,y,varargin)
 %        Q     synchrony measure, Q \in [0,1]
 %     Qprime   time-resolved synchrony with window size dn
 %     qprime   time-resolved antisynchrony (causality)
+%     taumin   minimal tau ever defined
 % .........................................................................
 
 ip = inputParser;
