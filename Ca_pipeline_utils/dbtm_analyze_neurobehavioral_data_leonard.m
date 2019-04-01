@@ -491,106 +491,11 @@ compare_spk2trace(cn,1)
 rasterplot(cn.spikes.')
 compare_spk2trace(cn,[10,12]);
 
-%% Now that we have spiketimes, we can build a measure of synchrony
-N = cn.n_cells;
-synchMAT = zeros(N,N);
-chanceMAT = zeros(N,N);
-tic
-for i = 1:N
-    x = cn.spikes(:,i).';
-    parfor j = 1:N
-        y = cn.spikes(:,j).';
-        [Q,~,~,taumin] = est_trace_synchrony(x,y);
-        synchMAT(i,j) = Q;
-        chanceMAT(i,j) = est_synchrony_reliability(x,y,taumin); 
-    end
-    percent = i*100/94; 
-    if rem(floor(percent),5) == 0
-        disp([num2str(floor(percent)),'% done.'])
-    end
-end
 
 %%
-distMAT = zeros(N,N); 
-for i = 1:N
-    parfor j = 1:N
-        distMAT(i,j) = 1 - synchMAT(i,j);
-    end
-end
+opts.framepath = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template copy.tif';
 
-
-[Cvopt, Topt, results] = find_cutoff_DB(Z,distMAT); 
-
-clear y
-clear Z
-clear T
-clear H
-clear cluster
-y = squareform(distMAT);
-Z = linkage(y,'average'); 
-H = dendrogram(Z,'Orientation','left','ColorThreshold','default');
-vline(Cvopt), hold off
-T = cluster(Z,'Cutoff',Cvopt,'criterion','distance');
-Nclust = max(T(:));
-
-N = cn.n_cells; 
-clear activity_cluster
-clear reorganised
-reorganised = [];
-for k = 1:Nclust
-    rois = find(T == k);
-    l = length(rois);
-    activity_cluster.clusterregions{1,k} = rois;
-    for i = 1:l
-        reorganised(end+1) = rois(i);
-        activity_cluster.centroid{k,i} = cn.centroid{1,rois(i)};
-        activity_cluster.mask{k,i} = cn.mask{1,rois(i)};
-    end
-end
-
-organisedMAT = zeros(N,N);
-orgchanceMAT = zeros(N,N);
-for k = 1:N
-    r1 = reorganised(k);
-    for j = 1:N
-        r2 = reorganised(j);
-        organisedMAT(k,j) = distMAT(r1,r2);
-        orgchanceMAT(k,j) = chanceMAT(r1,r2);
-    end
-end
-
-figure, imagesc(organisedMAT), title('Distance matrix with clustering-based grouping'), colorbar
-figure, imagesc(distMAT), title('Distance matrix with no grouping'), colorbar
-figure, imagesc(chanceMAT), title('Matrix showing P_{chance} with no grouping'), colorbar
-figure, imagesc(orgchanceMAT), title('Matrix showing P_{chance} with clustering-based grouping'), colorbar
-orgchanceMAT(isnan(orgchanceMAT)) = 0;
-porgchanceMAT = orgchanceMAT < 0.05;
-figure, imshow(porgchanceMAT); 
-
-%%
-registeredtif = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template copy.tif';
-
- imh = imshow(registeredtif); hold on,
- title('Spatial distribution of clustered regions')
- cmap = jet(Nclust);
- S = size(cn.mask{1,1});
- for k = 1:Nclust
-     L = length(activity_cluster.clusterregions{1,k});
-     c = cmap(k,:);
-     full = cat(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
-     names = activity_cluster.clusterregions{1,k};
-     for roi = 1:L
-         posi = activity_cluster.centroid{k,roi};
-         x = posi(1);
-         y = posi(2);
-         text(x,y,num2str(names(roi)),'Color',c)
-         I = activity_cluster.mask{k,roi};
-         h = imshow(full); hold on 
-         set(h, 'AlphaData', I*0.35) , hold on
-     end
- end
- 
-hold off  
+results = synchrony_clustering(cn,opts,grphcs); 
 
 %% 
 cmap = parula(Nclust);
