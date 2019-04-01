@@ -518,6 +518,9 @@ for i = 1:N
     end
 end
 
+
+[Cvopt, Topt, results] = find_cutoff_DB(Z,distMAT); 
+
 clear y
 clear Z
 clear T
@@ -525,9 +528,10 @@ clear H
 clear cluster
 y = squareform(distMAT);
 Z = linkage(y,'average'); 
-H = dendrogram(Z,'Orientation','left','ColorThreshold','default'); 
-T = cluster(Z,'Cutoff',0.5,'criterion','distance');
-Nclust = max(T);
+H = dendrogram(Z,'Orientation','left','ColorThreshold','default');
+vline(Cvopt), hold off
+T = cluster(Z,'Cutoff',Cvopt,'criterion','distance');
+Nclust = max(T(:));
 
 N = cn.n_cells; 
 clear activity_cluster
@@ -559,6 +563,9 @@ figure, imagesc(organisedMAT), title('Distance matrix with clustering-based grou
 figure, imagesc(distMAT), title('Distance matrix with no grouping'), colorbar
 figure, imagesc(chanceMAT), title('Matrix showing P_{chance} with no grouping'), colorbar
 figure, imagesc(orgchanceMAT), title('Matrix showing P_{chance} with clustering-based grouping'), colorbar
+orgchanceMAT(isnan(orgchanceMAT)) = 0;
+porgchanceMAT = orgchanceMAT < 0.05;
+figure, imshow(porgchanceMAT); 
 
 %%
 registeredtif = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template copy.tif';
@@ -584,5 +591,50 @@ registeredtif = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registrat
  end
  
 hold off  
+
+%% 
+cmap = parula(Nclust);
+chanceMAT(isnan(chanceMAT)) = 0;
+clear configuration
+ for j = 1:Nclust
+     cc = find(T==j);
+     configuration.(['c',num2str(j)]) = cc;
+ end
+
+  clusterprob = zeros(2,Nclust);
+ for j = 1:Nclust
+     allcells = linspace(1,N,N);
+     cj = configuration.(['c',num2str(j)]);
+     Tj = length(cj);
+     intraprobability = 0;
+     for ii = 1:Tj
+         for jj = 1:Tj
+             intraprobability = intraprobability + chanceMAT(cj(ii),cj(jj));
+         end
+     end
+     intraprobability = intraprobability/(Tj^2); 
+     
+     % interprobability
+     allcells(cj) = []; 
+     Ncrpd = N - Tj; 
+     interprobability = 0;
+     for i = 1:Tj
+         for k = 1:Ncrpd
+             interprobability = interprobability + chanceMAT(cj(i),allcells(k));
+         end
+     end
+     interprobability = interprobability/(Tj*Ncrpd);
+     
+     clusterprob(1,j) = intraprobability;
+     clusterprob(2,j) = interprobability;
+     figure, hold on
+     h=bar(clusterprob(:,j)); 
+     barvalues(h,'%.4f')
+     set(h,'FaceColor',cmap(j,:)), 
+     title(['Cluster ',num2str(j)]),hold off 
+ end
+ 
+
+
 
 
