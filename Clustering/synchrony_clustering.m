@@ -114,7 +114,7 @@ disp('3 - Determining optimal number of clusters using Davies-Bouldin.')
      find_cutoff_DB(Z,distMAT,'epsilon',opts.epsilon,'Nmax',...
      opts.Nmax,'Nmin',opts.Nmin);
  
-if graphics.dendrogram
+if grphcs.dendrogram
     H = dendrogram(Z,'Orientation','left','ColorThreshold','default');
     vline(Cvopt), hold off
 end
@@ -174,7 +174,7 @@ if grphcs.porgchanceMAT
     figure, imshow(porgchanceMAT); 
 end
 
-if grpchs.clusteredlandscape
+if grphcs.clusteredlandscape
      imh = imshow(opts.framepath); hold on,
      title('Spatial distribution of clustered regions')
      cmap = jet(Nclust);
