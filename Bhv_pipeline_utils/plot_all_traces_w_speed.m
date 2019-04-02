@@ -1,4 +1,4 @@
-function [] = plot_all_traces_w_speed(cnintensity,xc,speed_labels,ncat)
+function [] = plot_all_traces_w_speed(cnintensity,xc,speed_labels,tm_speedMs)
 % Plots all calcium traces specified in cn_intensity on top of speed
 % landscape with borders specified in xc and labels specified in
 % speed_labels. 
@@ -27,6 +27,10 @@ for roi=1:y
     labels(roi,1) = num2cell(roi);
 end
 
+offset = offset + 1000; 
+tt = linspace(1,length(speed_labels),length(tm_speedMs));
+plot(tt,tm_speedMs*max(back_to_zero(:))*100 + offset,'color','k','LineWidth',1)
+offset = offset + max(tm_speedMs*max(back_to_zero(:))*100);
 
 x0 = 10; 
 y0 = 10; 
@@ -34,25 +38,25 @@ width = 5500;
 height = 4000; 
 set(gcf,'position',[x0,y0,width,height])
 set(gca,'YTick',positions)
-set(gca,'TickLength',[0.001,0])
-set(gca,'yticklabel',labels)
+set(gca,'TickLength',[0,0])
+%set(gca,'yticklabel',labels)
+set(gca,'yticklabel',{})
 box off 
 axis tight
 xlabel('Time (s)')
 ylabel('ROIs')
 
 % ------------
+ncat = max(speed_labels);
+colormap = hsv(ncat+1);
 
-colormap = jet(ncat+1);
-
-
-% plot_dummies for legend
-l1 = plot([NaN,NaN], 'color', colormap(1,:));
-l2 = plot([NaN,NaN], 'color', colormap(2,:));
-l3 = plot([NaN,NaN], 'color', colormap(3,:));
-l4 = plot([NaN,NaN], 'color', colormap(4,:));
-l5 = plot([NaN,NaN], 'color', colormap(5,:));
-legend([l1, l2, l3, l4, l5], {'vlow','low','medium','fast','vfast'},'AutoUpdate','off');
+legend_spd = cell(ncat,1);
+for i = 1:ncat
+    l(i) = plot([NaN,NaN], 'color', colormap(i,:));
+    spdlbl = ['speed_',num2str(i-1)];
+    legend_spd(i) = cellstr(spdlbl); 
+end
+legend(l, legend_spd,'AutoUpdate','off');
 
 for k = 1:length(xc)-1
     xplus = xc(k+1);
