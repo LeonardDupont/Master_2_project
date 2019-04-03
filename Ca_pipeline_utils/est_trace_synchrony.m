@@ -124,8 +124,8 @@ end
                 end
                 
                 all = cat(2,alli,allj);
-                tau = min(all)/2;
-                
+                tau1 = min(all)/2;
+                tau = min(3,tau1);
                 if tau < taumin
                     taumin = tau;
                 end
