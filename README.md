@@ -6,6 +6,8 @@ in the team of Dr. Megan Carey (FChampalimaud, Lisbon).
 These codes mostly take part in an attempt to create an automated pipeline for the analysis of 1P, in vivo calcium data.
 Only codes with a header comprising my name were written by myself. All of them are under copyright. 
 
+Contact : leonard (dot) dupont [at] ens (dot) fr
+
 
 ## Folders
 
