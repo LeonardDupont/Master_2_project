@@ -361,7 +361,6 @@ compare_spk2trace(cn,[10,12]);
 %% SYNCHRONY ANALYSIS
 
 clear opts
-opts.framepath = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template copy.tif';
 opts.Nmax = 10;
 opts.Nmin = 2;
 opts.epsilon = 10e-4;
