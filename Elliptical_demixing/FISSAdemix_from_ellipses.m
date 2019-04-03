@@ -44,27 +44,42 @@ for roi = 1:N
    end
     
     tic
-    disp('1 -- Preparing fluorescence matrix with neuropile subregions --')
+   
     F = initFISSA_mixedF(neuropile,roi);
-    toc
-    disp('2 -- NNDSVD-based initialisation --')
+   
+   
     [W0,H0] = NNDSVD(F,nseg+1,0); 
     %initialisation of weight and separated matrices using SVD 
     
 
     % . . . . . . . . minimising |F - W*H| according to Frobenius . . . . .
     [W,H] = nnmf(F,nseg+1,'w0',W0,'h0',H0); 
+    
+    [rows,cols] = size(W);
+    Wprime = zeros(rows,cols);
+    
+    % . . . . . . . . . . . columnwise normalisation . . . . . . . . . . .  
+    % The somatic signal's maximal contribution (weight) occurs in the
+    % somatic segment. Therefore, we normalise columns to see which of the
+    % weights belonging to W(nseg,:) contributes more to the soma than to
+    % any other region.
+    
+    for k = 1:cols
+        Wprime(:,k) = W(:,k) / sum(W(:,k)) ;
+    end
    
     if neuropile.bkg
-        maxi = max(W(nseg,:)); %then last but one segment (last = bkg)
-        wc = find(W(nseg,:) == maxi);
+        maxi = max(Wprime(nseg,:)); %then last but one segment (last is bkg)
+        wc = find(Wprime(nseg,:) == maxi);
+        weight = W(nseg,wc);
     else
         maxi = max(W(nseg+1,:)); %then last segment
-        wc = find(W(nseg+1,:) == maxi);
+        wc = find(Wprime(nseg+1,:) == maxi);
+        weight = W(nseg+1,wc);
     end
     dmxd = H(wc,:);
     
-    cn.intensity_dm(:,roi) = dmxd; 
+    cn.intensity_dm(:,roi) = weight*dmxd; 
     
 end
 
