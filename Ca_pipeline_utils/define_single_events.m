@@ -1,12 +1,12 @@
-function   [pks,locs] = define_single_events(cn,rois)
+function   [pks,locs] = define_single_events(cnintensity,rois)
 
     N = length(rois);
     disp('Concatenating traces.')
-    t = length(cn.intensity(:,1)); 
+    t = length(cnintensity(:,1)); 
     
     calcium_data = zeros(N*t,1); 
     for k = 1:N
-        calcium_data(((k-1)*t+1):k*t,1) = cn.intensity(:,rois(k))-min(cn.intensity(:,rois(k))); 
+        calcium_data(((k-1)*t+1):k*t,1) = cnintensity(:,rois(k))-min(cnintensity(:,rois(k))); 
     end
     
     %tt = linspace(1,N*t/30,N*t);
@@ -15,7 +15,7 @@ function   [pks,locs] = define_single_events(cn,rois)
     
         [pks, locs,~,p] = findpeaks(calcium_data,'MinPeakProminence',0.05*max(calcium_data)); %theoretical minimum deltaF/F for one spike
 
-        too_high = find(pks > 0.2*max(calcium_data));
+        too_high = find(pks > 0.5*max(calcium_data));
         pks(too_high) = [];
         locs(too_high) = [];
 
