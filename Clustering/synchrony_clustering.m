@@ -54,7 +54,7 @@ function [results] = synchrony_clustering(cn,opts,grphcs)
 %   figures    depending on the graphics options
 %
 % .........................................................................
-parpool
+
 N = cn.n_cells;
 opts = check_empty(opts,'Nmax',10);
 opts = check_empty(opts,'Nmin',2);
@@ -210,8 +210,7 @@ results.T = T;
 % . . . . . . . . . . . . . . . . . . . . . . . . .. . . . . . . . . . . . 
 
 disp('Exiting. Clustering done!')
-p = gcp;
-delete(p)
+
 
     function [strct] = check_empty(strct,field,default)
 

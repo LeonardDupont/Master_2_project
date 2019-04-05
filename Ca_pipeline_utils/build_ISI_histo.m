@@ -64,7 +64,7 @@ if isstruct(data)
             end
             
             [N,edges] = histcounts(ISIfreq,'BinWidth',bw,'FaceColor',colour,'Normalization','probability');
-            
+            mm = median(ISIfreq); 
         end
         
         
@@ -93,6 +93,7 @@ if isstruct(data)
         end
         
         [N,edges] = histcounts(ISIfreq,'BinWidth',bw);
+        mm = median(ISIfreq); 
         
     end
        
@@ -118,12 +119,14 @@ else %then it's just a vector
     end   
     
     [N,edges] = histcounts(ISIfreq,'BinWidth',bw);
+    mm = median(ISIfreq); 
     
 end
 
 max_bin = find(N == max(N));
 average_spkrate = edges(max_bin); %we find the class
 disp(['Max bin is for ',num2str(average_spkrate), ' Hz'])
+disp(['Median frequency is ',num2str(mm),'Hz.'])
 
 end
 

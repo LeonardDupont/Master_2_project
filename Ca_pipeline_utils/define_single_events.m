@@ -44,7 +44,7 @@ function   [pks,locs] = define_single_events(cnintensity,rois)
                     axis tight
                 
                 
-                    title(['Peak n° ', num2str(peak)])
+                    title(['Peak nï¿½ ', num2str(peak)])
                     xlabel('Points')
                     ylabel('Fluorescence')
                 else
