@@ -49,10 +49,12 @@ ip = inputParser;
 ip.addParameter('Nmax',10);
 ip.addParameter('Nmin',2);
 ip.addParameter('epsilon',1e-4);
+ip.addParameter('min_units',3);
 parse(ip,varargin{:})
 Nmax = ip.Results.Nmax;
 Nmin = ip.Results.Nmin;
 epsilon = ip.Results.epsilon; 
+min_units = ip.Results.min_units;
 
 clear cluster
 clear configuration
@@ -116,6 +118,27 @@ for k = 1:nconfig
     % first we create a struct that stores the clustering configuration
     T = clustCONFIG(:,k);
     Nclust = clustSIZE(k);
+    skipit = false;
+    
+    badcl = 0;
+    for j=1:Nclust
+        cc = length(find(T==j));
+        if cc < min_units
+            badcl = badcl + 1;
+        end
+    end
+    
+    Ncheck = Nclust - badcl;
+    if Ncheck < Nmin %if Nclusters with more than nth elements is < Nmin
+        skipit = true;
+    end
+    
+    if skipit
+        results(1,k) = ctf_vals(k);
+        results(2,k) = 1e3; 
+        continue
+    end
+    
     clear configuration
     for j = 1:Nclust
         cc = find(T==j);

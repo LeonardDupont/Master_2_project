@@ -19,9 +19,10 @@ function [results] = synchrony_clustering(cn,opts,grphcs)
 %
 %   opts       struct of options with fields:
 %                .framepath   @char        path to registration template
-%                .Nmax         @double      maximal number of clusters
-%                .Nmin         @double      minimal number of clusters
-%                .epsilon      @double      step used in find_cutoff_DB.m
+%                .Nmax         @double     maximal number of clusters
+%                .Nmin         @double     minimal number of clusters
+%                .epsilon      @double     step used in find_cutoff_DB.m
+%                .min_units    @double     minimal nb of units to count cl
 %
 %   grphcs     struct of options with fields (all boolean)
 %                .dendrogram
@@ -60,6 +61,7 @@ opts = check_empty(opts,'Nmax',10);
 opts = check_empty(opts,'Nmin',2);
 opts = check_empty(opts,'epsilon',1e-4);
 opts = check_empty(opts,'framepath',[]);
+opts = check_empty(opts,'min_units',3); 
 
 grphcs = check_empty(grphcs,'dendrogram',0);
 grphcs = check_empty(grphcs,'distMAT',0);
@@ -112,7 +114,7 @@ disp('3 - Determining optimal number of clusters using Davies-Bouldin.')
 
 [Cvopt,Topt, ~] =...
      find_cutoff_DB(Z,distMAT,'epsilon',opts.epsilon,'Nmax',...
-     opts.Nmax,'Nmin',opts.Nmin);
+     opts.Nmax,'Nmin',opts.Nmin,'min_units',opts.min_units);
  
 if grphcs.dendrogram
     H = dendrogram(Z,'Orientation','left','ColorThreshold','default');
