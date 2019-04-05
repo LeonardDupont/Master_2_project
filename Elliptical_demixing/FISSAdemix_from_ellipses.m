@@ -1,4 +1,4 @@
-function [cn] = FISSAdemix_from_ellipses(neuropile,cn)
+function [cn] = FISSAdemix_from_ellipses(neuropile,cn,normalise)
 %% March 2019 - CareyLab - leonard.dupont@ens.fr
 % .........................................................................
 % This function takes in the neuropile struct containing cell-specific info
@@ -11,6 +11,7 @@ function [cn] = FISSAdemix_from_ellipses(neuropile,cn)
 %
 %   neuropile      struct with fields
 %   cn             struct with fields
+%   normalise      if you want to normalise data
 %
 %
 %   OUTPUT
@@ -27,13 +28,14 @@ end
 
 N = neuropile.n_cells;
 % . . . . . . . Normalise before demixing, otherwise artefacts . . . . . . 
-for roi = 1:N
-    for seg = 1:(nseg+1)
-        a = zero_and_max(neuropile.intensity{seg,roi}); 
-        neuropile.intensity{seg,roi} = a ; 
+if normalise
+    for roi = 1:N
+        for seg = 1:(nseg+1)
+            a = zero_and_max(neuropile.intensity{seg,roi}); 
+            neuropile.intensity{seg,roi} = a ; 
+        end
     end
 end
-
 
 
 % . . . . . . . . NNMF occurs here with NNDSVD initialisation . . . . . . .

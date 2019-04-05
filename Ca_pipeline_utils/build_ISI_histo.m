@@ -100,7 +100,7 @@ else %then it's just a vector
     
     ISIfreq = zeros(length(data)-1,1);
     spike_times = find(data == 1); 
-    for t = 1:length(data)-1
+    for t = 1:length(spike_times)-1
         ISIfreq(t) = fs/(spike_times(t+1)-spike_times(t));
     end
     

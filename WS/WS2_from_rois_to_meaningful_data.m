@@ -54,7 +54,8 @@ neuropile = subR_fluorescence(neuropile,inputfile);
 
 
 % A4 - Demixing using NNMF
-cn = FISSAdemix_from_ellipses(neuropile,cn); 
+normalise = 0;
+cn = FISSAdemix_from_ellipses(neuropile,cn,normalise); 
 
 
 %% (B) - Deconvolution of calcium signals
@@ -68,8 +69,8 @@ cn = FISSAdemix_from_ellipses(neuropile,cn);
 % Choose rois that seem to display single events, list them and define the
 % spikes using the functions hereunder.
 plot_all_traces(cn.intensity)
-se_traces = [23 24]; 
-define_single_events(cn,se_traces)
+se_traces = [58]; 
+define_single_events(cn.intensity_dm,se_traces)
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 eventsamp = getGlobal_yesevents; 
@@ -152,17 +153,17 @@ rasterplot(cn.spikes.')
 
 % PL1 - to visualise the ellipse, the fluorescence of the neuropile
 % segments and compare it to the center ROI.
-cells = [1,2,3]; 
+cells = [58]; 
 plot_segcell_traces(neuropile,cells)
 
 % PL2 - after NNMF, FISSA demixing : compare ROI fluorescence before and
 % after the demixing protocol. 
-cells = [1,2,3]; 
+cells = [58]; 
 compare_mx_dmx(cn,cells)
 
 % PL3 - compare the fluorescence trace and the estimated spiketrain after
 % deconvolution. 
-rois = [1 2 3];
+rois = [58];
 compare_spk2trace(cn,rois)
 
 % PL4 - more global
