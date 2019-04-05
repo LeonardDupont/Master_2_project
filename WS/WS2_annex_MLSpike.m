@@ -1,17 +1,9 @@
 
-% again here, we must define single events for the autocalibration 
-roi = 45; %check with the plot_all_traces function
-good_trace = cn.intensity(:,roi);
-[pks,locs] = define_single_events(good_trace);
 
-% execute separately - GetGlobal command
- 
-
-% b : now we feed the autocalibration and deconvolute the signals 
-clear deconvolution
+% b : now we feed the autocalibration and deconvolute the signals
 clear par
 [x,y] = size(calcium_data);
-
+good_trace = cn.intensity(:,57);
 
 % autocalibration
 calcium_norm = good_trace/mean(good_trace); %doesn't necessarily need to be normalised
@@ -36,9 +28,9 @@ par.dographsummary = false;
 par.finetune.sigma = sigmaest; %to be left empty from my experience, even
 %though we estimated it 
 
-
-for roi=1:185
+cn = rmfield(cn,'spikes');
+for roi=1:cn.n_cells
     disp(['Processing ROI ' , num2str(roi)])
-    [spk, fit, drift, parest] = spk_est(calcium_data(:,roi),par); 
-    cn.spiketimes{1,roi} = spk;
+    [spk, fit, drift, parest] = spk_est(cn.intensity(:,roi),par); 
+    cn.spikes{1,roi} = spk;
 end
