@@ -104,49 +104,155 @@ end
         taumin = 1000;
         mx = length(tx);
         my = length(ty);
+        
         cxy = 0;
-        for i = 1:mx
-             if i == 1
-                    alli = [tx(i+1)-tx(i)];
-                elseif i == mx
-                    alli = [tx(i)-tx(i-1)];
-                else
-                    alli = [tx(i+1)-tx(i),tx(i)-tx(i-1)];
-             end
-            for j = 1:my
-                
-                if j == 1
-                    allj = [ty(j+1)-ty(j)];
-                elseif j == my
-                    allj = [ty(j)-ty(j-1)];
-                else
-                    allj = [ty(j+1)-ty(j),ty(j)-ty(j-1)];
+        
+        if mx == 1 && my > 1
+            i = 1;
+            alli = [];
+                for j = 1:my
+                    
+                    if j == 1
+                        allj = [ty(j+1)-ty(j)];
+                    elseif j == my 
+                        allj = [ty(j)-ty(j-1)];
+                    else
+                        allj = [ty(j+1)-ty(j),ty(j)-ty(j-1)];
+                    end
+                    
+                    
+                    all = cat(2,alli,allj);
+                    tau1 = min(all)/2;
+                    tau = min(3,tau1);
+                    if tau < taumin
+                        taumin = tau;
+                    end
+
+                    dt = tx(i) - ty(j);
+                    if dt>0 && dt<tau
+                       Jij = 1;
+                    elseif dt == 0
+                       Jij = 1/2;
+                    else
+                       Jij = 0;
+                    end
+
+                    if usestep
+                        step = stpfc(n-tx(i));
+                    else
+                        step = 1;
+                    end
+
+                    cxy = cxy + Jij*step;
                 end
+
+        elseif my == 1 && mx > 1
+            j = 1;
+            allj = [];
+            
+            for i = 1:mx
                 
-                all = cat(2,alli,allj);
-                tau1 = min(all)/2;
-                tau = min(3,tau1);
-                if tau < taumin
-                    taumin = tau;
-                end
+                    if i == 1
+                        alli = [tx(i+1)-tx(i)];
+                    elseif j == my 
+                        alli = [tx(i)-tx(i-1)];
+                    else
+                        alli = [tx(i+1)-tx(i),tx(i)-tx(i-1)];
+                    end
+                    
+                    
+                    all = cat(2,alli,allj);
+                    tau1 = min(all)/2;
+                    tau = min(3,tau1);
+                    if tau < taumin
+                        taumin = tau;
+                    end
+
+                    dt = tx(i) - ty(j);
+                    if dt>0 && dt<tau
+                       Jij = 1;
+                    elseif dt == 0
+                       Jij = 1/2;
+                    else
+                       Jij = 0;
+                    end
+
+                    if usestep
+                        step = stpfc(n-tx(i));
+                    else
+                        step = 1;
+                    end
+
+                    cxy = cxy + Jij*step;
                 
-                dt = tx(i) - ty(j);
+                
+            end
+            
+        elseif mx == 1 && mx == 1
+            dt = tx(mx) - ty(my);
                 if dt>0 && dt<tau
-                   Jij = 1;
+                    Jij = 1;
                 elseif dt == 0
-                   Jij = 1/2;
+                    Jij = 1/2;
                 else
-                   Jij = 0;
+                    Jij = 0;
                 end
                 
                 if usestep
-                    step = stpfc(n-tx(i));
+                     step = stpfc(n-tx(i));
                 else
-                    step = 1;
+                     step = 1;
                 end
-                
+
                 cxy = cxy + Jij*step;
+                
+            
+        elseif mx>1 && my>1
+            for i = 1:mx
+                 if i == 1
+                        alli = [tx(i+1)-tx(i)];
+                    elseif i == mx 
+                        alli = [tx(i)-tx(i-1)];
+                    else
+                        alli = [tx(i+1)-tx(i),tx(i)-tx(i-1)];
+                 end
+                 for j = 1:my
+
+                    if j == 1
+                        allj = [ty(j+1)-ty(j)];
+                    elseif j == my 
+                        allj = [ty(j)-ty(j-1)];
+                    else
+                        allj = [ty(j+1)-ty(j),ty(j)-ty(j-1)];
+                    end
+
+                    all = cat(2,alli,allj);
+                    tau1 = min(all)/2;
+                    tau = min(3,tau1);
+                    if tau < taumin
+                        taumin = tau;
+                    end
+
+                    dt = tx(i) - ty(j);
+                    if dt>0 && dt<tau
+                       Jij = 1;
+                    elseif dt == 0
+                       Jij = 1/2;
+                    else
+                       Jij = 0;
+                    end
+
+                    if usestep
+                        step = stpfc(n-tx(i));
+                    else
+                        step = 1;
+                    end
+
+                    cxy = cxy + Jij*step;
+                end
             end
+        else %one of the 2 is null
+            cxy = 0;
         end
     end
    
