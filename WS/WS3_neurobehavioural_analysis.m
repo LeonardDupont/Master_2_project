@@ -120,9 +120,10 @@ figure, hold on
 plot(tm.time,tm.speedM), axis tight
 plot(im.time,m_ca)
 
-Nkk = 4; 
+Nkk = 4; % SAME AS CONCATENATE MUKAMEL 
+inputpath = '';
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-speedkk = imbased_konkat(im,tm,Nkk); 
+speedkk = imbased_konkat(im,tm,inputpath,Nkk); 
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 
 if isstruct(speedkk)
@@ -144,16 +145,17 @@ plot(imtime,m_ca*rescale)
 
 
 % C2 - analysing speed categories 
-ncat = 3; 
+ncat = 2; 
 % - - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 speedcats = define_speedcats(tm_speedMs,ncat);
 % - - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 speedlabels = assign_speedlabels(tm_speedMs,speedcats);
 ncat = max(speedlabels); % speed == 0 always adds a category, check if so
 % - - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-speedlabels = get_speedregime_boundaries(speedlabels);
+xc = get_speedregime_boundaries(speedlabels);
 % - - - - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
+plot_all_traces_w_speed(cn.intensity,xc,speedlabels,tm_speedMs)
 
 %% (D) - Relating fluorescence to speed
 % What we now want is to see how changes in fluorescence (cor)relate to
