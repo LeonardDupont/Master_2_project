@@ -43,7 +43,7 @@ set(gca,'TickLength',[0,0])
 set(gca,'yticklabel',{})
 box off 
 axis tight
-xlabel('Time (s)')
+xlabel('Datapoints (fs = 30Hz)')
 ylabel('ROIs')
 
 % ------------
