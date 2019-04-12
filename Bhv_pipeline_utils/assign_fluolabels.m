@@ -3,7 +3,7 @@ function [fluolabels] = assign_fluolabels(fluodata,fluocats)
 %  This function takes in speed as a function of time (tm_speedMs) and the
 %  previously defined speedcategories (boundaries stored in speedcats) to
 %  then label each datapoint with a category
-
+    fluodata = zero_and_max(fluodata.'); 
     fluolabels = zeros(length(fluodata),1);
     for j = 1:length(fluodata)
         cat = 1;

@@ -3,7 +3,7 @@ function [fluocats] = define_fluocats(fluodata,ncat)
 % Same as define_speedcats.m, but with fluorescence. 
 
 
-    fluodata = zero_and_max(fluodata);
+    fluodata = zero_and_max(fluodata.');
     maxs = max(fluodata);
     mins = min(fluodata);
 
