@@ -34,20 +34,14 @@ startpts = [];
 stoppts = [];
 
 fs = 30; %Hz
-epsilon = 2;
+epsilon = 1;
 startpts(end+1) = im.time(1);
-c=1;
 for k = 1:length(im.time)-1
     delta = im.time(k+1) - im.time(k);
     if (delta - 1/fs) > epsilon
         startpts(end+1) = im.time(k+1);
         stoppts(end+1) = im.time(k);
         c = k;
-    else
-        if (k - c) == (trsize * 30)
-            startpts(end+1) = im.time(k+1);
-            stoppts(end+1) = im.time(k);
-        end
     end
 end
 stoppts(end+1) = im.time(end);

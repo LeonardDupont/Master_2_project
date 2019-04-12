@@ -174,6 +174,7 @@ end
 
 aside = Ttm - binboundaries(end);
 binboundaries(end+1) = binboundaries(end)+aside;
+
 figure, hold on
 Nclust = length(activity_cluster.clusterregions);
 for j = 1:Nclust
