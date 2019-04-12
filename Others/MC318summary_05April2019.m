@@ -7,7 +7,7 @@
 % leonard.dupont@ens.fr
 %
 %% Data loading
-data = load('/Users/leonarddupont/Desktop/M2_internship/Data/S2/carey_neurons.mat');
+data = load('/Users/leonarddupont/Desktop/M2_internship/Data/S2/second_try/carey_neurons.mat');
 cns2 = data.cn;
 
 data = load('/Users/leonarddupont/Desktop/M2_internship/Data/S4/carey_neurons.mat');
@@ -27,10 +27,10 @@ embedded = load(svmname);
 TheSVM = embedded.Pkj_sorter.ClassificationSVM; 
 clear embedded
 clear svmname
-criteria = extract_mask_criteria(cns2s); 
+criteria = extract_mask_criteria(cns2); 
 labels = predict(TheSVM,criteria); 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -- - - - - - - 
-cns2s = remove_bad_purkinje(cns2s,labels); 
+cns2 = remove_bad_purkinje(cns2,labels); 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -- - - - - - - 
 clear labels
 clear criteria
@@ -40,11 +40,11 @@ clear criteria
 % Execute all steps independently
 clear good_purkinje
 % -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
-manual_roi_sorting(cns5s)
+manual_roi_sorting(cns2s)
 % -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 good_purkinje = getglobal_purkinje;
 % -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
-cns4s = remove_bad_purkinje(cns4,good_purkinje); 
+cns2s = remove_bad_purkinje(cns2,good_purkinje); 
 % -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 
 %% PLOTS THEMSELVES 
@@ -61,7 +61,8 @@ subplot(2,3,6), purkinje_artscape(cns5s.mask)
 
 %%
 nrois = 3; 
-S2 = [21,23,5];
+%S2 = [16,53,2];
+S2 = [4,52,2];
 S4 = [13,65,16];
 S5 = [5,78,16];
 
@@ -156,10 +157,10 @@ cmap = parula(5);
 sizes2 = size(cns2s.mask{1,1});
 sizes4 = size(cns4s.mask{1,1});
 sizes5 = size(cns5s.mask{1,1});
-pt_max = 3497;
+pt_max = min([length(cns5s.intensity),length(cns4s.intensity),length(cns2s.intensity)]); 
 time = linspace(1,pt_max/30,pt_max); 
 %%
-
+offset = 1;
 for i = 1:nrois
     figure('Renderer', 'painters', 'Position', [500 500 900 600])
     subplot(4,3,1)
@@ -202,108 +203,252 @@ for i = 1:nrois
         set(h, 'AlphaData', I) , hold off 
         title('Session 5') 
         
-    xtstart = 60;
-    xtstop = 80;
+    xtstart = 2000;
+    xtstop = 2500;
     x = [xtstart,xtstart,xtstop,xtstop];
-    y = [0, 1, 1, 0];
+    y = [-0.2, 1, 1, -0.2];
+    timeticks = linspace(1,length(cns2s.intensity(1:pt_max,1)),8);
+    xlabels = cell(8,1);
+    for k = 1:8
+        xlabels(k) = num2cell(round(timeticks(k)/30));
+    end
     subplot(4,3,4)
-        plot(time,zero_and_max(cns2s.intensity(1:pt_max,S2(i)).'),'color',cmap(i,:)), hold on
+        plot(zero_and_max(cns2s.intensity(1:pt_max,S2(i)).'),'color',cmap(i,:)), hold on
         u = fill(x,y,cmap(i,:));
         u.FaceAlpha = 0.15;
-        u.EdgeColor = 'none';
+        u.EdgeColor = 'none'; hold on
+        ylim([-0.2,max(zero_and_max(cns2s.intensity(1:pt_max,S2(i)).'))+0.1])
+        spikes = cns2s.spikes(1:pt_max,S2(i)).'; 
+        spktimes = find(spikes==1); 
+        Nspk = length(spktimes);
+        for ii = 1:Nspk
+            xs = [spktimes(ii),spktimes(ii)];
+            ys = [-0.15,-0.05];
+            plot(xs,ys,'color','k'), hold on
+        end
         xlabel('Time (s)')
         ylabel('\Delta F / F')
+        xticks(timeticks)
+        xticklabels(xlabels)
         axis tight
         
     subplot(4,3,5)
-        plot(time,zero_and_max(cns4s.intensity(1:pt_max,S4(i)).'),'color',cmap(i,:)), hold on
+        plot(zero_and_max(cns4s.intensity(1:pt_max,S4(i)).'),'color',cmap(i,:)), hold on
         u = fill(x,y,cmap(i,:));
         u.FaceAlpha = 0.15;
-        u.EdgeColor = 'none';
+        u.EdgeColor = 'none'; hold on
+        ylim([-0.2,max(zero_and_max(cns4s.intensity(1:pt_max,S4(i)).'))+0.1])
+        spikes = cns4s.spikes(1:pt_max,S4(i)).'; 
+        spktimes = find(spikes==1); 
+        Nspk = length(spktimes);
+        for ii = 1:Nspk
+            xs = [spktimes(ii),spktimes(ii)];
+            ys = [-0.15,-0.05];
+            plot(xs,ys,'color','k'), hold on
+        end
         xlabel('Time (s)')
+        xticks(timeticks)
+        xticklabels(xlabels)
         axis tight
         
     subplot(4,3,6)
-        plot(time,zero_and_max(cns5s.intensity(1:pt_max,S5(i)).'), 'color',cmap(i,:)), hold on 
+        plot(zero_and_max(cns5s.intensity(1:pt_max,S5(i)).'), 'color',cmap(i,:)), hold on 
         u = fill(x,y,cmap(i,:));
         u.FaceAlpha = 0.15;
         u.EdgeColor = 'none';
+        ylim([-0.2,max(zero_and_max(cns5s.intensity(1:pt_max,S5(i)).'))+0.1])
+        spikes = cns5s.spikes(1:pt_max,S5(i)).'; 
+        spktimes = find(spikes==1); 
+        Nspk = length(spktimes);
+        for ii = 1:Nspk
+            xs = [spktimes(ii),spktimes(ii)];
+            ys = [-0.15,-0.05];
+            plot(xs,ys,'color','k'), hold on
+        end
         xlabel('Time (s)')
+        xticks(timeticks)
+        xticklabels(xlabels)
         axis tight
         
-    tstrt = round(60*30);
-    tstp = round(80*30); 
-    time2 = linspace(60,80,tstp-tstrt+1);
+    tstrt = 2000;
+    tstp = 2500; 
+    timeticks = linspace(1,tstp-tstrt+1,5);
+    timeticks2 = linspace(tstrt,tstp,5);
+    xlabels = cell(5,1);
+    for k = 1:5
+        xlabels(k) = num2cell(round(timeticks2(k)/30));
+    end
     subplot(4,3,7)
         data = zero_and_max(cns2s.intensity.').'; 
-        plot(time2,data(tstrt:tstp,S2(i)), 'color',cmap(i,:)), hold on
-        axis tight
-        u = fill([60 60 80 80],[0, max(data(tstrt:tstp,S2(i)))+0.1, max(data(tstrt:tstp,S2(i)))+0.1, 0],cmap(i,:));
+        plot(data(tstrt:tstp,S2(i)), 'color',cmap(i,:)), axis tight,  hold on
+        u = fill([1 1 500 500],[-0.2, max(data(tstrt:tstp,S2(i)))+0.1, max(data(tstrt:tstp,S2(i)))+0.1, -0.2],cmap(i,:));
         u.FaceAlpha = 0.15;
         u.EdgeColor = 'none';
+        spikes = cns2s.spikes(tstrt:tstp,S2(i)).'; 
+        spktimes = find(spikes==1); 
+        Nspk = length(spktimes);
+        for ii = 1:Nspk
+            xs = [spktimes(ii),spktimes(ii)];
+            ys = [-0.15,-0.05];
+            plot(xs,ys,'color','k'), hold on
+        end
+        xticks(timeticks)
+        xticklabels(xlabels)
         xlabel('Time (s)')
         ylabel('\Delta F / F')
+        
     subplot(4,3,8)
         data = zero_and_max(cns4s.intensity.').';
-        plot(time2,data(tstrt:tstp,S4(i)), 'color',cmap(i,:)), hold on
-        axis tight
-        u = fill([60 60 80 80],[0, max(data(tstrt:tstp,S4(i)))+0.1, max(data(tstrt:tstp,S4(i)))+0.1, 0],cmap(i,:));
+        plot(data(tstrt:tstp,S4(i)), 'color',cmap(i,:)), axis tight,  hold on
+        u = fill([1 1 500 500],[-0.2, max(data(tstrt:tstp,S4(i)))+0.1, max(data(tstrt:tstp,S4(i)))+0.1, -0.2],cmap(i,:));
         u.FaceAlpha = 0.15;
         u.EdgeColor = 'none';
+        spikes = cns4s.spikes(tstrt:tstp,S4(i)).'; 
+        spktimes = find(spikes==1); 
+        Nspk = length(spktimes);
+        for ii = 1:Nspk
+            xs = [spktimes(ii),spktimes(ii)];
+            ys = [-0.15,-0.05];
+            plot(xs,ys,'color','k'), hold on
+        end
+        xticks(timeticks)
+        xticklabels(xlabels)
         xlabel('Time (s)')
     subplot(4,3,9)
         data = zero_and_max(cns5s.intensity.').';
-        plot(time2,data(tstrt:tstp,S5(i)), 'color',cmap(i,:)), hold on
-        axis tight
-        u = fill([60 60 80 80],[0, max(data(tstrt:tstp,S5(i)))+0.1, max(data(tstrt:tstp,S5(i)))+0.1, 0],cmap(i,:));
+        plot(data(tstrt:tstp,S5(i)), 'color',cmap(i,:)), axis tight, hold on
+        u = fill([1 1 500 500],[-0.2, max(data(tstrt:tstp,S5(i)))+0.1, max(data(tstrt:tstp,S5(i)))+0.1, -0.2],cmap(i,:));
         u.FaceAlpha = 0.15;
         u.EdgeColor = 'none';
+        spikes = cns5s.spikes(tstrt:tstp,S5(i)).'; 
+        spktimes = find(spikes==1); 
+        Nspk = length(spktimes);
+        for ii = 1:Nspk
+            xs = [spktimes(ii),spktimes(ii)];
+            ys = [-0.15,-0.05];
+            plot(xs,ys,'color','k'), hold on
+        end
+        xticks(timeticks)
+        xticklabels(xlabels)
         xlabel('Time (s)')
     
+        bw = 0.3;
     subplot(4,3,10)
-        ISIs = simple_ISIs(cns2s.mspikes(i,:));
-        h = histogram(ISIs,'BinWidth',0.5,'Normalization','probability'); hold on
-        wfreqs = slidingwindow_freq(cns2s.mspikes(i,:));
-        mm = sum(wfreqs)/length(wfreqs~=0);
-        ttt = ['Mean = ',num2str(mm)];
-        text(max(wfreqs)/2,0.2,ttt)
-        h.FaceColor = cmap(i,:);
-        h.FaceAlpha = 0.8;
-        ISIs2 = simple_ISIs(cns5s.spikes(:,S5(i)));
-        g = histogram(ISIs2,'BinWidth',0.5,'Normalization','probability');
+        %ISIs = simple_ISIs(cns2s.mspikes(i,:));
+        %h = histogram(ISIs,'BinWidth',0.5,'Normalization','probability'); hold on
+        %h.FaceColor = cmap(i,:);
+        %h.FaceAlpha = 0.8;
+        ISIs2 = simple_ISIs(cns2s.spikes(:,S2(i)));
+        g = histogram(ISIs2,'BinWidth',bw,'Normalization','probability');
         g.FaceColor = cmap(i,:);
         g.FaceAlpha = 0.3; 
+        [N,~] = histcounts(ISIs2,'BinWidth',bw,'Normalization','Probability');
+        whbin = find(N == max(N));
+        modefreq = whbin * bw;
+        title(['Mode = ',num2str(modefreq),'Hz'])
+        xlim([0,10])
         xlabel('Hz bin')
         ylabel('Probability')
     subplot(4,3,11)
-        ISIs = simple_ISIs(cns4s.mspikes(i,:));
-        h = histogram(ISIs,'BinWidth',0.5,'Normalization','probability'); hold on
-        wfreqs = slidingwindow_freq(cns4s.mspikes(i,:));
-        mm = sum(wfreqs)/length(wfreqs~=0);
-        ttt = ['Mean = ',num2str(mm)];
-        text(max(wfreqs)/2,0.2,ttt)
-        h.FaceColor = cmap(i,:);
-        h.FaceAlpha = 0.8;
-        ISIs2 = simple_ISIs(cns5s.spikes(:,S5(i)));
-        g = histogram(ISIs2,'BinWidth',0.5,'Normalization','probability');
+        %ISIs = simple_ISIs(cns4s.mspikes(i,:));
+        %h = histogram(ISIs,'BinWidth',0.5,'Normalization','probability'); hold on
+        %h.FaceColor = cmap(i,:);
+        %h.FaceAlpha = 0.8;
+        ISIs2 = simple_ISIs(cns4s.spikes(:,S4(i)));
+        g = histogram(ISIs2,'BinWidth',bw,'Normalization','probability');
         g.FaceColor = cmap(i,:);
-        g.FaceAlpha = 0.3; 
+        g.FaceAlpha = 0.3;
+        [N,~] = histcounts(ISIs2,'BinWidth',bw,'Normalization','Probability');
+        whbin = find(N == max(N));
+        modefreq = whbin * bw;
+        title(['Mode = ',num2str(modefreq),'Hz'])
+        xlim([0,10])
         xlabel('Hz bin')
     subplot(4,3,12)
-        ISIs = simple_ISIs(cns5s.mspikes(i,:));
-        h = histogram(ISIs,'BinWidth',0.5,'Normalization','probability'); hold on
-        wfreqs = slidingwindow_freq(cns5s.mspikes(i,:));
-        mm = sum(wfreqs)/length(wfreqs~=0);
-        ttt = ['Mean = ',num2str(mm)];
-        text(max(wfreqs)/2,0.2,ttt)
-        h.FaceColor = cmap(i,:);
-        h.FaceAlpha = 0.8; hold on
+        %ISIs = simple_ISIs(cns5s.mspikes(i,:));
+        %h = histogram(ISIs,'BinWidth',0.5,'Normalization','probability'); hold on
+        %h.FaceColor = cmap(i,:);
+        %h.FaceAlpha = 0.8; hold on
         ISIs2 = simple_ISIs(cns5s.spikes(:,S5(i)));
-        g = histogram(ISIs2,'BinWidth',0.5,'Normalization','probability');
+        g = histogram(ISIs2,'BinWidth',bw,'Normalization','probability');
         g.FaceColor = cmap(i,:);
         g.FaceAlpha = 0.3; 
+        [N,~] = histcounts(ISIs2,'BinWidth',bw,'Normalization','Probability');
+        whbin = find(N == max(N));
+        modefreq = whbin * bw;
+        title(['Mode = ',num2str(modefreq),'Hz'])
+        xlim([0,10])
         xlabel('Hz bin')
 end
+
+
+%% Session-wide average ISIs
+
+cmap = jet(8);
+bw = 0.3;
+figure, hold on
+
+subplot(2,3,1)
+purkinje_artscape(cns2s.mask)
+title('Session 2')
+
+subplot(2,3,2)
+purkinje_artscape(cns4s.mask)
+title('Session 4')
+subplot(2,3,3)
+purkinje_artscape(cns5s.mask)
+title('Session 5')
+
+subplot(2,3,4)
+ISIs = [];
+for k = 1:cns2s.n_cells
+    ISI = simple_ISIs(cns2s.spikes(:,k));
+    ISIs = cat(1,ISI,ISIs);
+end
+h = histogram(ISIs,'BinWidth',bw,'Normalization','Probability');
+[N,~] = histcounts(ISIs,'BinWidth',bw,'Normalization','Probability');
+whbin = find(N == max(N));
+modefreq = whbin * bw;
+title(['Mode = ',num2str(modefreq),'Hz'])
+h.FaceColor = cmap(1,:);
+h.FaceAlpha = 0.3;
+xlim([0,10])
+xlabel('Frequency (Hz)')
+ylabel('Probability')
+
+subplot(2,3,5)
+ISIs = [];
+for k = 1:cns4s.n_cells
+    ISI = simple_ISIs(cns4s.spikes(:,k));
+    ISIs = cat(1,ISI,ISIs);
+end
+h = histogram(ISIs,'BinWidth',bw,'Normalization','Probability');
+[N,~] = histcounts(ISIs,'BinWidth',bw,'Normalization','Probability');
+whbin = find(N == max(N));
+modefreq = whbin * bw;
+title(['Mode = ',num2str(modefreq),'Hz'])
+h.FaceColor = cmap(2,:);
+h.FaceAlpha = 0.25;
+xlim([0,10])
+xlabel('Frequency (Hz)')
+
+subplot(2,3,6)
+ISIs = [];
+for k = 1:cns5s.n_cells
+    ISI = simple_ISIs(cns5s.spikes(:,k));
+    ISIs = cat(1,ISI,ISIs);
+end
+h = histogram(ISIs,'BinWidth',bw,'Normalization','Probability');
+[N,~] = histcounts(ISIs,'BinWidth',bw,'Normalization','Probability');
+whbin = find(N == max(N));
+modefreq = whbin * bw;
+title(['Mode = ',num2str(modefreq),'Hz'])
+h.FaceColor = cmap(3,:);
+h.FaceAlpha = 0.2;
+xlim([0,10])
+xlabel('Frequency (Hz)')
+
+
 
 %% Plot all traces
 plot_all_traces(cns2s.intensity), hold on, title('Session 2'), hold off 
@@ -391,49 +536,415 @@ clear im
 %% SPEED-BASED ANALYSIS
 
 % C1 - speed data preprocessing 
-m_cas4 = mean(cns4s.intensity.',1);
-m_cas4 = zero_and_max(m_cas4);
+m_cas5 = mean(cns5s.intensity.',1);
+m_cas5 = zero_and_max(m_cas5);
 
-% Initial plot : over the whole session 
-figure, hold on
-plot(tm4.time,tm4.speedM), axis tight
-plot(im4.time,m_cas4)
+m_cas2 = mean(cns2s.intensity.',1);
+m_cas2 = zero_and_max(m_cas2);
+
+m_cas4 = mean(cns4s.intensity.',1);
+m_cas4 = zero_and_max(m_cas4); 
+
+
+Nkk = 5;
+inputpath = '/Volumes/carey/leonard.dupont/TM IMAGING FILES/voluntary locomotion/MC318/S2';
+speedkk2 = imbased_konkat(im2,tm2,inputpath,Nkk);
+tm_speedMs2  = speedkk2.trials_15_16_1_27_29;
 
 Nkk = 5;
 inputpath = '/Volumes/carey/hugo.marques/LocomotionExperiments/RT Self-paced/Imaging/TM IMAGING FILES/voluntary locomotion/MC318/S4';
 speedkk4 = imbased_konkat(im4,tm4,inputpath,Nkk);
+tm_speedMs4  = speedkk4.trials_1_21_24_25_31;
 
+Nkk = 5;
+inputpath = '/Volumes/carey/hugo.marques/LocomotionExperiments/RT Self-paced/Imaging/TM IMAGING FILES/voluntary locomotion/MC318/S5';
+speedkk5 = imbased_konkat(im5,tm5,inputpath,Nkk);
+tm_speedMs5  = speedkk5.trials_1_25_27_51;
+
+clear speedkk2
+clear speedkk4
+clear speedkk5
+
+%% Producing gaussian-filtered speed traces 
+
+%removing negative speed values
+tm_speedMs2(tm_speedMs2 < 0) = 0;
+tm_speedMs4(tm_speedMs4 < 0) = 0;
+tm_speedMs5(tm_speedMs5 < 0) = 0;
+
+%gaussian filtering
+tm_speedMs2 = smoothdata(tm_speedMs2,'gaussian',5000);
+figure, plot(tm_speedMs2)
+tm_speedMs4 = smoothdata(tm_speedMs4,'gaussian',5000);
+figure, plot(tm_speedMs4)
+tm_speedMs5 = smoothdata(tm_speedMs5,'gaussian',5000); %smoothed version
+figure, plot(tm_speedMs5)
 
 %%
-
-%%
-
-
-
-tm_speedMs = speedkks4;
-tm_speedMs(tm_speedMs < 0) = 0;
-tm_speedMs = smoothdata(speedkks4,'gaussian',10000); %smoothed version
-figure, plot(tm_speedMs)
-
-spdtime = linspace(1,tm.time(length(tm_speedMs)),length(tm_speedMs)); 
-imtime = linspace(1,tm.time(length(tm_speedMs)),length(m_cas4));
-
-rescale = max(tm_speedMs);
-
-figure, hold on
-plot(spdtime,tm_speedMs), axis tight
-plot(imtime,m_cas4*rescale)
-
-
-%%
-ncat = 2; 
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-speedcats = define_speedcats(tm_speedMs,ncat);
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-speedlabels = assign_speedlabels(tm_speedMs,speedcats);
-ncat = max(speedlabels); % speed == 0 always adds a category, check if so
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-xc = get_speedregime_boundaries(speedlabels);
+% To define speed categories, given that it is the same mouse each time, we
+% are going to use a concatenated speed trace.
+ncat = 3; 
+l_ALL = length(tm_speedMs2)+length(tm_speedMs4)+length(tm_speedMs5);
+tm_speedALL = zeros(l_ALL,1);
+tm_speedALL(1:length(tm_speedMs2),1) = tm_speedMs2;
+tm_speedALL((length(tm_speedMs2)+1):(length(tm_speedMs2)+length(tm_speedMs4)),1) = tm_speedMs4;
+tm_speedALL((length(tm_speedMs2)+length(tm_speedMs4)+1):l_ALL,1) = tm_speedMs5;
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-plot_all_traces_w_speed(cns4s.intensity,xc,speedlabels,tm_speedMs)
+speedcats = define_speedcats(tm_speedALL,ncat);
+% - - - - - - - - - - - - OR (individual speedcats) - - - - - - - - - - - - 
+speedcats2 = define_speedcats(tm_speedMs2,ncat);
+speedcats4 = define_speedcats(tm_speedMs4,ncat);
+speedcats5 = define_speedcats(tm_speedMs5,ncat);
+% - - - - - - - - - Mind the input speedcats - - - - - - - - - - - - - - -
+speedlabels2 = assign_speedlabels(tm_speedMs2,speedcats2);
+speedlabels4 = assign_speedlabels(tm_speedMs4,speedcats4);
+speedlabels5 = assign_speedlabels(tm_speedMs5,speedcats5);
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+xc2 = get_speedregime_boundaries(speedlabels2);
+xc4 = get_speedregime_boundaries(speedlabels4);
+xc5 = get_speedregime_boundaries(speedlabels5);
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+plot_all_traces_w_speed(cns2s.intensity,xc2,speedlabels2,tm_speedMs2)
+plot_all_traces_w_speed(cns4s.intensity,xc4,speedlabels4,tm_speedMs4)
+plot_all_traces_w_speed(cns5s.intensity,xc5,speedlabels5,tm_speedMs5)
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+%% Now let's move onto some actual fluo x speed analysis
+%
+%     Synchrony
+%     Using the acceleration
+%     Fluorescence intensity
+
+
+accs2 = get_acceleration_from_speed(tm_speedMs2,tm2.time(1:length(tm_speedMs2)));
+figure, plot(accs2);
+
+accs4 = get_acceleration_from_speed(tm_speedMs4,tm4.time(1:length(tm_speedMs4)));
+accs5 = get_acceleration_from_speed(tm_speedMs5,tm5.time(1:length(tm_speedMs5)));
+
+maxacc = max(abs(accs4));
+minacc = min(abs(accs4));
+
+%%
+naccat = 5;
+accboundaries = zeros(naccat+1,1);
+for k = 1:naccat
+    accboundaries(k+1) = (maxacc-minacc)/naccat * k;
+end
+accboundaries(1) = 0.0001;
+
+%%
+accmap = hot(10);
+acclabels = zeros(length(accs4),1);
+colorgradient = zeros(length(accs4),3);
+for k = 1:length(accs4)
+    cat = 1;
+    while abs(accs4(k)) > accboundaries(cat)
+        cat = cat + 1;
+    end
+    acclabels(k) = cat;
+    colorgradient(k,:) = accmap(cat,:);
+end
+
+D = floor(length(accs4)/length(m_cas4));
+aside = rem(length(accs4),length(m_cas4));
+dscolorgradient = zeros(length(m_cas4),3);
+dsacclabels = zeros(length(m_cas4),1);
+for k = 1:length(m_cas4)
+    if k~=length(m_cas4)
+        start = (k-1)*D + 1;
+        stop = k*D;
+        dscolorgradient(k,:) = mean(colorgradient(start:stop,:));
+        dsacclabels(k) = round(mean(acclabels(start:stop)));
+    else
+        start = (k-1)*D + 1;
+        stop = k*D + aside;
+        dscolorgradient(k,:) = mean(colorgradient(start:stop,:));
+        dsacclabels(k) = round(mean(acclabels(start:stop)));
+    end
+end
+%%
+
+xcacc = get_speedregime_boundaries(acclabels);
+
+fluo_x_accelerationpeaks(cns4s.intensity,accs4,colorgradient,xcacc)
+    
+    
+%%
+
+nfluobins = 20;
+Tim = length(m_cas4);
+Ttm = length(accs4);
+mergeF = Ttm/Tim; 
+
+binboundaries = zeros(k,1); 
+for k = 1:Tim
+    binboundaries(k) = floor((k-1)*mergeF + 1);
+end
+aside = Ttm - binboundaries(end);
+binboundaries(end+1) = binboundaries(end)+aside;
+
+
+fluocats = define_fluocats(m_cas4.',nfluobins);
+fluolabels = assign_fluolabels(m_cas4.',fluocats);
+
+Nimbins = max(fluolabels);
+Ntmbins = max(acclabels);
+MImat = zeros(Nimbins,Ntmbins);
+
+for j = 1:Tim
+   start = binboundaries(j);
+   stop = binboundaries(j+1);
+   tmlabel = round(mean(acclabels(start:stop)));
+   imlabel = fluolabels(j);
+   MImat(imlabel,tmlabel) = MImat(imlabel,tmlabel) + 1;
+end
+   
+MImat = MImat/Tim; 
+
+for imlbl = 1:Nimbins
+    Pim = length(find(fluolabels == imlbl))/ Tim;
+    for tmlbl = 1:Ntmbins
+       Ptm = length(find(acclabels == tmlbl))/ Ttm;
+       % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+       MImat(imlbl,tmlbl) =  log(MImat(imlbl,tmlbl)/ (Pim*Ptm));
+       % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+     end
+end
+        
+figure, imagesc(MImat), colorbar
+ylabel('Fluorescence')
+xlabel('Acceleration')
+%%
+nfluobins = 20;
+for k = 1:cns4s.n_cells
+    
+    fluocats = define_fluocats(cns4s.intensity(:,k),nfluobins);
+    fluolabels = assign_fluolabels(cns4s.intensity(:,k),fluocats);
+
+    Nimbins = max(fluolabels);
+    Ntmbins = max(acclabels);
+    MImat = zeros(Nimbins,Ntmbins);
+
+    for j = 1:Tim
+       start = binboundaries(j);
+       stop = binboundaries(j+1);
+       tmlabel = round(mean(acclabels(start:stop)));
+       imlabel = fluolabels(j);
+       MImat(imlabel,tmlabel) = MImat(imlabel,tmlabel) + 1;
+    end
+
+    MImat = MImat/Tim; 
+
+    for imlbl = 1:Nimbins
+        Pim = length(find(fluolabels == imlbl))/ Tim;
+        for tmlbl = 1:Ntmbins
+           Ptm = length(find(acclabels == tmlbl))/ Ttm;
+           % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+           MImat(imlbl,tmlbl) =  log(MImat(imlbl,tmlbl)/ (Pim*Ptm));
+           % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+         end
+    end
+
+    
+    subplot(4,20,k), imagesc(MImat)
+    axis off 
+    box off 
+    if k == cns4s.n_cells
+        ylabel('Fluorescence')
+        xlabel('Acceleration')
+    end
+end
+
+
+
+%%
+fs = 30; %Hz
+twindow = 1; %s
+wind = twindow * fs;
+
+D = floor(length(cns4s.spikes(:,1))/wind);
+aside = rem(length(cns4s.spikes(:,1)),wind);
+spkboundaries = zeros(D+1,1);
+for k = 1:D
+    spkboundaries(k+1) = k*wind;
+end
+spkboundaries(end) = spkboundaries(end) + aside;
+spkboundaries(1) = 1;
+
+N = cns4s.n_cells;
+sliding_synchrony = zeros(D,1);
+for k=1:D
+    start = spkboundaries(k);
+    stop = spkboundaries(k+1);
+    Qvals = zeros(N,N);
+    for r1 = 1:N
+        train1 = cns4s.spikes(start:stop,r1);
+        for r2 = 1:N
+            train2 = cns4s.spikes(start:stop,r2);
+            if r1 ~= r2
+                [Q,~,~,~] = est_trace_synchrony(train1,train2);
+                Qvals(r1,r2) = Q;
+            end
+        end
+    end
+    Qvals = Qvals(:);
+    sQ = sum(Qvals);
+    if sQ ~=0
+        mQ = sQ/length(find(Qvals~=0));
+    else
+        mQ = 0;
+    end
+    sliding_synchrony(k) = mQ;
+    disp([num2str(k*100/D),'%'])
+end
+
+%%
+Tsy = length(sliding_synchrony);
+Ttm = length(accs4);
+nsynchbins = 10;
+mergeF = Ttm/Tsy; 
+
+binboundaries = zeros(k,1); 
+for k = 1:Tsy
+    binboundaries(k) = floor((k-1)*mergeF + 1);
+end
+aside = Ttm - binboundaries(end);
+binboundaries(end+1) = binboundaries(end)+aside;
+
+
+synchcats = define_fluocats(sliding_synchrony,nsynchbins);
+synchlabels = assign_fluolabels(sliding_synchrony,synchcats);
+
+Nimbins = max(synchlabels);
+Ntmbins = max(acclabels);
+MImat = zeros(Nimbins,Ntmbins);
+
+for j = 1:Tsy
+   start = binboundaries(j);
+   stop = binboundaries(j+1);
+   tmlabel = round(mean(acclabels(start:stop)));
+   imlabel = synchlabels(j);
+   MImat(imlabel,tmlabel) = MImat(imlabel,tmlabel) + 1;
+end
+   
+MImat = MImat/Tsy; 
+
+for imlbl = 1:Nimbins
+    Pim = length(find(synchlabels == imlbl))/ Tim;
+    for tmlbl = 1:Ntmbins
+       Ptm = length(find(acclabels == tmlbl))/ Ttm;
+       % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+       MImat(imlbl,tmlbl) =  log(MImat(imlbl,tmlbl)/ (Pim*Ptm));
+       % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+     end
+end
+        
+figure, imagesc(MImat), colorbar
+ylabel('Synchrony')
+xlabel('Acceleration')
+    
+synchtime = linspace(1,length(m_cas4)/30,length(sliding_synchrony));
+plot_all_traces(cns4s.intensity), hold on
+plot(synchtime,sliding_synchrony*1e6)
+
+%%
+mm = mean(accs4);
+accs4 = accs4 - mm; 
+ups = max(accs4);
+downs = min(accs4); 
+sigmaup = 0.4*ups;
+sigmadown = 0.48*downs;
+
+figure, plot(accs4,'color','k'), axis tight, hold on
+hline(sigmaup), hold on
+hline(sigmadown), hold off 
+
+
+% Now we classify data 
+acclabels = zeros(length(accs4),1);
+for k = 1:length(accs4)
+    pt = accs4(k);
+    if (pt<sigmaup) && (pt>sigmadown)
+        acclabels(k) = 2; %noise
+    elseif pt > sigmaup
+        acclabels(k) = 3; %noteworthy acceleration
+    elseif pt < sigmadown
+        acclabels(k) = 1; %noteworthy decceleration
+    end
+end
+
+naccat = 3;
+colormap = hot(naccat);
+
+nfluocats = 25;
+fluocats = define_fluocats(m_cas4.',nfluocats);
+fluolabels = assign_fluolabels(m_cas4.',fluocats);
+
+Tim = length(m_cas4);
+Ttm = length(accs4);
+nsynchbins = 10;
+mergeF = Ttm/Tim; 
+
+binboundaries = zeros(Tim,1); 
+for k = 1:Tim
+    binboundaries(k) = floor((k-1)*mergeF + 1);
+end
+aside = Ttm - binboundaries(end);
+if aside ~=0
+    binboundaries(end+1) = binboundaries(end)+aside;
+end
+
+Nimbins = max(fluolabels);
+Ntmbins = max(acclabels);
+MImat = zeros(Nimbins,Ntmbins);
+
+for k = 1:Tim
+    imlbl = fluolabels(k);
+    start = binboundaries(k);
+    stop = binboundaries(k+1);
+    acclbl = round(mean(acclabels(start:stop)));
+    MImat(imlbl,acclbl) = MImat(imlbl,acclbl) + 1;
+end
+
+MImat = MImat / Tim; 
+
+for imlbl = 1:Nimbins
+    Pim = length(find(fluolabels == imlbl)) / length(fluolabels);
+    for acclbl = 1:Ntmbins
+        Ptm = length(find(acclabels == acclbl)) / length(acclabels);
+        MImat(imlbl,acclbl) = MImat(imlbl,acclbl)/(Pim*Ptm);
+    end
+end
+
+figure, imagesc(MImat)
+
+%%
+nfluocats = 25;
+Nimbins = nfluocats;
+for roi = 1:cns4s.n_cells
+    
+    MImat = zeros(Nimbins,Ntmbins);
+    fluocats = define_fluocats(cns4s.intensity(:,roi),nfluocats);
+    fluolabels = assign_fluolabels(cns4s.intensity(:,roi),fluocats);
+
+    for k = 1:Tim
+        imlbl = fluolabels(k);
+        start = binboundaries(k);
+        stop = binboundaries(k+1);
+        acclbl = round(mean(acclabels(start:stop)));
+        MImat(imlbl,acclbl) = MImat(imlbl,acclbl) + 1;
+    end
+
+    MImat = MImat / Tim; 
+    
+    for imlbl = 1:Nimbins
+        Pim = length(find(fluolabels == imlbl)) / length(fluolabels);
+        for acclbl = 1:Ntmbins
+            Ptm = length(find(acclabels == acclbl)) / length(acclabels);
+            MImat(imlbl,acclbl) = MImat(imlbl,acclbl)/(Pim*Ptm);
+        end
+    end
+    
+    subplot(4,20,roi), imagesc(MImat), axis off
+    
+end
