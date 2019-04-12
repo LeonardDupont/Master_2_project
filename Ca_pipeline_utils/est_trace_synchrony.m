@@ -43,7 +43,11 @@ taumin = min(tauminxy,tauminyx);
 mx = length(tx); %nb of x events
 my = length(ty); %nb of y events
 
-Q = (cxy + cyx)/sqrt(mx*my);  %simple and straightforward
+if mx~=0 && my~=0
+    Q = (cxy + cyx)/sqrt(mx*my);  %simple and straightforward
+else
+    Q = 0;
+end
 
 %% Q'(n)
 
@@ -188,8 +192,9 @@ end
                 
             end
             
-        elseif mx == 1 && mx == 1
-            dt = tx(mx) - ty(my);
+        elseif mx == 1 && my == 1
+            dt = tx(1) - ty(1);
+            tau = 3;
                 if dt>0 && dt<tau
                     Jij = 1;
                 elseif dt == 0
