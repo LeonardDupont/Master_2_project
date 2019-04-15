@@ -9,7 +9,7 @@ for roi=1:y
 end
 
 figure, hold on
-title('Acceleration v Fluorescence')
+title('Fluorescence = f(t) with acceleration information')
 offset = 0;
 for roi=1:y
   plot(timeIM,back_to_zero(:,roi)+offset,'color','k'), hold on
@@ -38,8 +38,8 @@ end
 
 
 % This is just to label min speed, max speed and the speed trace
-position = [position, (position+offset)/2 ,offset];
-labels = {min(acc),'acceleration (m.s^{-2})',max(acc)};
+position = (position+offset)/2;
+labels = {'acceleration (m.s^{-2})'};
 
 x0 = 10; 
 y0 = 10; 
@@ -53,6 +53,14 @@ box off
 axis tight
 xlabel('Time (s)')
 ylabel('ROI fluorescence') %they occupy most of the space so OK 
+
+accmaps = [0 0.3 0.9 ; 0.9 0.9 0.9 ;1 0.4 0.3]; 
+accnames = {'decceleration','constant speed','acceleration'};
+for i = 1:3
+    l(i) = plot([NaN,NaN], 'color', accmaps(i,:));
+end
+legend(l, accnames,'AutoUpdate','off');
+
 
 hold on
 xposi = linspace(1,length(acc),10);
