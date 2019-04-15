@@ -23,7 +23,7 @@ spacing = ip.Results.spacing;
 colour = ip.Results.color;
 
 %%
-   [N,~] = size(data); 
+    [N,~] = size(data); 
     
     figure, hold on
     xlabel('Time (s)')
@@ -52,6 +52,6 @@ colour = ip.Results.color;
     box off 
     axis tight
     title(['Rasterplot of ', num2str(N), ' selected ROIs'])
-    hold off 
+
     
 end

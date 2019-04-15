@@ -86,7 +86,7 @@ for i = 1:N
         chanceMAT(i,j) = est_synchrony_reliability(x,y,taumin); 
         distMAT(i,j) = 1 - synchMAT(i,j);
     end
-    percent = i*100/94; 
+    percent = i*100/N; 
     if rem(floor(percent),5) == 0
         disp([num2str(floor(percent)),'% done.'])
     end
