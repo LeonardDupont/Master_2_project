@@ -849,6 +849,115 @@ synchresults = synchrony_clustering(cns4s,opts,grphcs);
 %     Using the acceleration
 %     Fluorescence intensity
 
+
+
+
+
+
+
+%% PSTH
+axh1 = subplot(7,1,1:5);
+height = 1;
+spacing = 0.5;
+colour = 'k';
+N = cns4s.n_cells;
+
+for roi = 1:N
+        
+   estimated = cns4s.spikes(:,roi);
+   spktimes = find(estimated==1); %each round, we get the spike times 
+   y = [(roi-1)*height + roi*spacing , roi*height + roi*spacing]; %we prepare 2 coordinates in y (we're gonna draw a vertical line: spike)
+        
+   for spk = 1:length(spktimes) %for each spike from this roi, we draw vertical lines at the right x coordinates
+       x = [spktimes(spk), spktimes(spk)]*1/30;
+       plot(x,y,'color',colour), hold on
+   end
+        
+end
+
+set(gca,'TickLength',[0.001,0])
+box off 
+axis tight 
+mH = roi*height + roi*spacing;
+for k = 1:length(xcacc)-1
+    xplus = xcacc(k+1);
+    xminus = xcacc(k);
+    color = acccolors(xplus-1,:);
+    
+    xl = [xminus, xminus, xplus, xplus]*1/3000;
+    yl = [0  mH mH 0];
+    a = fill(xl,yl,color); hold on,
+    a.FaceAlpha = 0.6;
+    a.EdgeColor = 'none';
+end
+
+ylabel('Cell')
+xticks([])
+yticks([])
+
+
+
+
+
+axh2 = subplot(7,1,6);
+sumSPK = zeros(length(cns4s.intensity(:,1)),1);
+for k = 1:length(cns4s.intensity(:,1))
+    spkthistime = cns4s.spikes(k,:);
+    sumSPK(k) = sum(spkthistime);
+end
+
+for k = 1:length(xcacc)-1
+    xplus = xcacc(k+1);
+    xminus = xcacc(k);
+    color = acccolors(xplus-1,:);
+    
+    xl = [xminus, xminus, xplus, xplus]*1/3000;
+    yl = [0 max(sumSPK) max(sumSPK) 0];
+    a = fill(xl,yl,color); hold on,
+    a.FaceAlpha = 0.6;
+    a.EdgeColor = 'none';
+end
+
+x = linspace(1,length(accs4)/3000,length(cns4s.intensity(:,1)));
+clear spkthistime
+b = bar(x,sumSPK); axis tight, hold on 
+b.FaceColor = 'k';
+b.BarWidth = 1;
+b.FaceAlpha = 1;
+b.EdgeColor = 'k';
+b.EdgeAlpha = 1;
+
+tt = linspace(1,length(accs4),10);
+xticks(tt)
+lbls = cell(length(tt),1);
+for j = 1:length(tt)
+    lbls(j) = num2cell(round(tt(j)*3.333e-04));
+end
+xticklabels(lbls)
+ylabel('Number of spikes')
+xlabel('Time (s)')
+box off
+
+subplot(7,1,7)
+for k = 1:length(xcacc)-1
+    xplus = xcacc(k+1);
+    xminus = xcacc(k);
+    color = acccolors(xplus-1,:);
+    
+    xl = [xminus, xminus, xplus, xplus]*1/3000;
+    yl = [0 max(sumSPK) max(sumSPK) 0];
+    a = fill(xl,yl,color); hold on,
+    a.FaceAlpha = 0.6;
+    a.EdgeColor = 'none';
+end
+
+x = linspace(1,length(sm_synchrony/30),length(sm_synchrony));
+plot(sm_synchrony,'color','k')
+
+
+linkaxes([axh1,axh2,axh3],'x')
+
+%%
 tic
 wsize = 6; %points
 dw = 1;
@@ -891,114 +1000,4 @@ clear c
 %%
 sm_synchrony = smoothdata(ssynchrony,'gaussian',10); 
 figure, plot(sm_synchrony)
-
-%% PSTH - MIGHT BE A SMALL ISSUE HERE WITH TIMING
-axh1 = subplot(7,1,1:5);
-height = 1;
-spacing = 0.5;
-colour = 'k';
-N = cns4s.n_cells;
-
-for roi = 1:N
-        
-   estimated = cns4s.spikes(:,roi);
-   spktimes = find(estimated==1); %each round, we get the spike times 
-   y = [(roi-1)*height + roi*spacing , roi*height + roi*spacing]; %we prepare 2 coordinates in y (we're gonna draw a vertical line: spike)
-        
-   for spk = 1:length(spktimes) %for each spike from this roi, we draw vertical lines at the right x coordinates
-       x = [spktimes(spk), spktimes(spk)]*1/30;
-       plot(x,y,'color',colour), hold on
-   end
-        
-end
-
-set(gca,'TickLength',[0.001,0])
-box off 
-axis tight 
-mH = roi*height + roi*spacing;
-for k = 1:length(xcacc)-1
-    xplus = xcacc(k+1);
-    xminus = xcacc(k);
-    color = acccolors(xplus-1,:);
-    
-    xl = [xminus, xminus, xplus, xplus]*1/3000;
-    yl = [0  mH mH 0];
-    a = fill(xl,yl,color); hold on,
-    a.FaceAlpha = 0.6;
-    a.EdgeColor = 'none';
-end
-
-ylabel('Units')
-xticks([])
-yticks([])
-
-
-
-
-
-axh2 = subplot(7,1,6);
-sumSPK = zeros(length(cns4s.intensity(:,1)),1);
-for k = 1:length(cns4s.intensity(:,1))
-    spkthistime = cns4s.spikes(k,:);
-    sumSPK(k) = sum(spkthistime);
-end
-
-for k = 1:length(xcacc)-1
-    xplus = xcacc(k+1);
-    xminus = xcacc(k);
-    color = acccolors(xplus-1,:);
-    
-    xl = [xminus, xminus, xplus, xplus]*1/3000;
-    yl = [0 max(sumSPK) max(sumSPK) 0];
-    a = fill(xl,yl,color); hold on,
-    a.FaceAlpha = 0.6;
-    a.EdgeColor = 'none';
-end
-
-x = linspace(1,length(cns4s.intensity(:,1))/30,length(cns4s.intensity(:,1)));
-clear spkthistime
-b = bar(x,sumSPK); axis tight, hold on 
-b.FaceColor = 'k';
-b.BarWidth = 1;
-b.FaceAlpha = 1;
-b.EdgeColor = 'k';
-b.EdgeAlpha = 1;
-
-xticks([])
-ylabel('N_{spikes}')
-
-axh3 = subplot(7,1,7);
-for k = 1:length(xcacc)-1
-    xplus = xcacc(k+1);
-    xminus = xcacc(k);
-    color = acccolors(xplus-1,:);
-    
-    xl = [xminus, xminus, xplus, xplus]*1/3000;
-    yl = [0 1 1 0];
-    a = fill(xl,yl,color); hold on,
-    a.FaceAlpha = 0.6;
-    a.EdgeColor = 'none';
-end
-
-x = linspace(1,length(sm_synchrony)/30,length(sm_synchrony));
-plot(x,sm_synchrony,'color','k'), axis tight
-
-tt = linspace(1,length(sm_synchrony)/30,10);
-
-lbls = cell(length(tt),1);
-for j = 1:length(tt)
-    lbls(j) = num2cell(round(tt(j)));
-end
-
-ylabel('Synchrony')
-xticks(tt)
-xticklabels(lbls)
-xlabel('Time (s)')
-box off
-
-
-linkaxes([axh1,axh2,axh3],'x')
-
-%%
-
 
