@@ -127,7 +127,7 @@ end
                     
                     all = cat(2,alli,allj);
                     tau1 = min(all)/2;
-                    tau = min(3,tau1);
+                    tau = min(2,tau1);
                     if tau < taumin
                         taumin = tau;
                     end
@@ -167,7 +167,7 @@ end
                     
                     all = cat(2,alli,allj);
                     tau1 = min(all)/2;
-                    tau = min(3,tau1);
+                    tau = min(2,tau1);
                     if tau < taumin
                         taumin = tau;
                     end
@@ -194,7 +194,7 @@ end
             
         elseif mx == 1 && my == 1
             dt = tx(1) - ty(1);
-            tau = 3;
+            tau = 2;
                 if dt>0 && dt<tau
                     Jij = 1;
                 elseif dt == 0
@@ -233,7 +233,7 @@ end
 
                     all = cat(2,alli,allj);
                     tau1 = min(all)/2;
-                    tau = min(3,tau1);
+                    tau = min(2,tau1);
                     if tau < taumin
                         taumin = tau;
                     end

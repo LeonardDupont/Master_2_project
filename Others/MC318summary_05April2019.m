@@ -166,12 +166,12 @@ for i = 1:nrois
     subplot(4,3,1)
     
         S = sizes2;
-        white = cat(3,zeros(S),zeros(S),zeros(S)); 
+        white = categ(3,zeros(S),zeros(S),zeros(S)); 
         h = imshow(white); hold on 
         art = S2(i);  
         I = cns2s.mask{1,art};
         c = cmap(i,:);
-        full = cat(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
+        full = categ(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
         h = imshow(full); hold on 
         set(h, 'AlphaData', I) , hold off 
         title('Session 2')
@@ -179,12 +179,12 @@ for i = 1:nrois
     subplot(4,3,2)
     
         S = sizes4;
-        white = cat(3,zeros(S),zeros(S),zeros(S)); 
+        white = categ(3,zeros(S),zeros(S),zeros(S)); 
         h = imshow(white); hold on 
         art = S4(i);  
         I = cns4s.mask{1,art};
         c = cmap(i,:);
-        full = cat(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
+        full = categ(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
         h = imshow(full); hold on 
         set(h, 'AlphaData', I) , hold off 
         title('Session 4')
@@ -193,12 +193,12 @@ for i = 1:nrois
     subplot(4,3,3)
     
         S = sizes5;
-        white = cat(3,zeros(S),zeros(S),zeros(S)); 
+        white = categ(3,zeros(S),zeros(S),zeros(S)); 
         h = imshow(white); hold on 
         art = S5(i);  
         I = cns5s.mask{1,art};
         c = cmap(i,:);
-        full = cat(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
+        full = categ(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
         h = imshow(full); hold on 
         set(h, 'AlphaData', I) , hold off 
         title('Session 5') 
@@ -403,7 +403,7 @@ subplot(2,3,4)
 ISIs = [];
 for k = 1:cns2s.n_cells
     ISI = simple_ISIs(cns2s.spikes(:,k));
-    ISIs = cat(1,ISI,ISIs);
+    ISIs = categ(1,ISI,ISIs);
 end
 h = histogram(ISIs,'BinWidth',bw,'Normalization','Probability');
 [N,~] = histcounts(ISIs,'BinWidth',bw,'Normalization','Probability');
@@ -420,7 +420,7 @@ subplot(2,3,5)
 ISIs = [];
 for k = 1:cns4s.n_cells
     ISI = simple_ISIs(cns4s.spikes(:,k));
-    ISIs = cat(1,ISI,ISIs);
+    ISIs = categ(1,ISI,ISIs);
 end
 h = histogram(ISIs,'BinWidth',bw,'Normalization','Probability');
 [N,~] = histcounts(ISIs,'BinWidth',bw,'Normalization','Probability');
@@ -436,7 +436,7 @@ subplot(2,3,6)
 ISIs = [];
 for k = 1:cns5s.n_cells
     ISI = simple_ISIs(cns5s.spikes(:,k));
-    ISIs = cat(1,ISI,ISIs);
+    ISIs = categ(1,ISI,ISIs);
 end
 h = histogram(ISIs,'BinWidth',bw,'Normalization','Probability');
 [N,~] = histcounts(ISIs,'BinWidth',bw,'Normalization','Probability');
@@ -810,7 +810,7 @@ for k = 1:K
     cl = find(indx == k);
     L = length(cl);
     c = cmap(k,:);
-    full = cat(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
+    full = categ(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
     for i = 1:L
         roi = cl(i);
         posi = cns4s.centroid{1,roi};
@@ -829,6 +829,7 @@ opts.Nmax = 10;
 opts.Nmin = 2;
 opts.epsilon = 10e-4;
 opts.framepath = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_templateS4.tif';
+
 
 clear grphcs
 grphcs.dendrogram = 1;
@@ -892,29 +893,16 @@ clear c
 sm_synchrony = smoothdata(ssynchrony,'gaussian',10); 
 figure, plot(sm_synchrony)
 
-%% PSTH - MIGHT BE A SMALL ISSUE HERE WITH TIMING
-axh1 = subplot(7,1,1:5);
+%% PSTH
+% Mystery with this plot is time alignement of subplots
+subplot(7,1,1:5);
 height = 1;
 spacing = 0.5;
-colour = 'k';
 N = cns4s.n_cells;
+im_max = 145*30;
+tm_max = 145*3000; 
+xcacc(end) = tm_max;
 
-for roi = 1:N
-        
-   estimated = cns4s.spikes(:,roi);
-   spktimes = find(estimated==1); %each round, we get the spike times 
-   y = [(roi-1)*height + roi*spacing , roi*height + roi*spacing]; %we prepare 2 coordinates in y (we're gonna draw a vertical line: spike)
-        
-   for spk = 1:length(spktimes) %for each spike from this roi, we draw vertical lines at the right x coordinates
-       x = [spktimes(spk), spktimes(spk)]*1/30;
-       plot(x,y,'color',colour), hold on
-   end
-        
-end
-
-set(gca,'TickLength',[0.001,0])
-box off 
-axis tight 
 mH = roi*height + roi*spacing;
 for k = 1:length(xcacc)-1
     xplus = xcacc(k+1);
@@ -928,19 +916,34 @@ for k = 1:length(xcacc)-1
     a.EdgeColor = 'none';
 end
 
+
+for roi = 1:N
+        
+   estimated = cns4s.spikes(1:im_max,roi);
+   spktimes = find(estimated==1); %each round, we get the spike times 
+   y = [(roi-1)*height + roi*spacing , roi*height + roi*spacing]; %we prepare 2 coordinates in y (we're gonna draw a vertical line: spike)
+        
+   for spk = 1:length(spktimes) %for each spike from this roi, we draw vertical lines at the right x coordinates
+       x = [spktimes(spk), spktimes(spk)]*1/30.0003;
+       plot(x,y,'color','k'), hold on
+   end
+        
+end
+
+set(gca,'TickLength',[0.001,0])
+box off 
+xlim([1,145])
+ylim([0,mH])
 ylabel('Units')
 xticks([])
 yticks([])
 
-
-
-
-
-axh2 = subplot(7,1,6);
-sumSPK = zeros(length(cns4s.intensity(:,1)),1);
-for k = 1:length(cns4s.intensity(:,1))
+subplot(7,1,6);
+sumSPK = zeros(length(cns4s.intensity(1:im_max,1)),1);
+for k = 1:length(cns4s.intensity(1:im_max,1))
     spkthistime = cns4s.spikes(k,:);
     sumSPK(k) = sum(spkthistime);
+   
 end
 
 for k = 1:length(xcacc)-1
@@ -955,19 +958,20 @@ for k = 1:length(xcacc)-1
     a.EdgeColor = 'none';
 end
 
-x = linspace(1,length(cns4s.intensity(:,1))/30,length(cns4s.intensity(:,1)));
+xb = linspace(1,length(sumSPK)/30,length(sumSPK));
 clear spkthistime
-b = bar(x,sumSPK); axis tight, hold on 
+b = bar(xb,sumSPK); axis tight, hold on 
 b.FaceColor = 'k';
-b.BarWidth = 1;
+%b.BarWidth = 1;
 b.FaceAlpha = 1;
 b.EdgeColor = 'k';
 b.EdgeAlpha = 1;
 
+
 xticks([])
 ylabel('N_{spikes}')
 
-axh3 = subplot(7,1,7);
+subplot(7,1,7);
 for k = 1:length(xcacc)-1
     xplus = xcacc(k+1);
     xminus = xcacc(k);
@@ -980,25 +984,159 @@ for k = 1:length(xcacc)-1
     a.EdgeColor = 'none';
 end
 
-x = linspace(1,length(sm_synchrony)/30,length(sm_synchrony));
-plot(x,sm_synchrony,'color','k'), axis tight
+x = linspace(1,im_max/30,im_max);
+plot(x,sm_synchrony(1:im_max),'color','k'), axis tight, hold on
 
-tt = linspace(1,length(sm_synchrony)/30,10);
+
+tt = linspace(1,im_max/30,10);
 
 lbls = cell(length(tt),1);
 for j = 1:length(tt)
     lbls(j) = num2cell(round(tt(j)));
 end
-
 ylabel('Synchrony')
-xticks(tt)
-xticklabels(lbls)
+set('gca','XTick',tt,'XTickLabel',lbls)
 xlabel('Time (s)')
 box off
+hold off 
 
 
-linkaxes([axh1,axh2,axh3],'x')
+h=get(gcf,'children');
+linkaxes(h,'x')
+
+%% EVENT AMPLITUDE AND CELL SYNCHRONY
+% It seems that because of scattering in the 1P microscope, events that
+% correspond to huge synchronisations are reflected by high-fluorescence
+% events in the calcium traces. Here we quantify this phenomenon.
+
+for i = 1:cns4s.n_cells
+    spikes = cns4s.spikes(:,i);
+    calcium = cns4s.intensity(:,i) - min(cns4s.intensity(:,i)); %assuming flat baseline
+    spktimes = find(spikes == 1);
+    eventheight = zeros(length(cns4s.spikes(:,i)),1);
+    for k = 1:length(spktimes)
+        t = spktimes(k);
+        eventheight(t) = mean(calcium(t:t+2));
+    end
+    cns4s.eventheight(:,i) = eventheight; 
+end
+
+clear spkamp_coord
+c = 1;
+for k = 1:length(cns4s.intensity)
+    spkunits = find(cns4s.spikes(k,:) == 1);
+    Nunits = length(spkunits);
+    spkamp_coord(1,c) = mean(cns4s.eventheight(k,:));
+    spkamp_coord(2,c) = Nunits;
+    c = c + 1;
+end
+%%
+subplot(1,2,1)
+x = spkamp_coord(2,:); %Nunits sharing the spike  
+y = spkamp_coord(1,:); %amplitudes
+zz = find(x==0);
+x(zz(1:end-1)) = [];
+y(zz(1:end-1)) = [];
+s = scatter(x,y,3,[0.767816699258443   0.516358225453477   0.506171068243531],'filled'); hold on
+s.MarkerFaceAlpha = 1;
+s.MarkerEdgeColor = [0.767816699258443   0.516358225453477   0.506171068243531];
+s.MarkerEdgeAlpha = 0.5;
+xlabel('Number of synchronous cells')
+ylabel(sprintf('Event amplitude\n(fluorescence units)'))
+
+
+X = cat(1,ones(1,length(x)),x);
+b = X'\y';
+y_prd= X'*b; %predicted y based on regression 
+plot(x,y_prd,'--','color','k'), hold on
+
+Rsquare = 1 - sum((y - y_prd.').^2)/sum((y-mean(y)).^2);
+title(['r^{2} = ',num2str(Rsquare)])
+ylim([0,max(y)])
+box off 
+
+
+% - - - - - - - amplitude categories - - - - - - - -
+nampcats = 50;
+maxy = max(y);
+diffcat = maxy/nampcats ; %mins is 0, fluorescence rarely is 0
+ampcats = zeros(nampcats,1);
+for i = 1:nampcats
+   ampcats(i) = i* diffcat;
+end
+
+amplabels = zeros(1,length(y));
+for k = 1:length(y)
+    ampl = y(k);
+    categ = 1;
+    while ampl > ampcats(categ)
+        categ = categ + 1;
+    end
+    amplabels(k) = categ;
+end
+
+% - - - - - - - same for Nunits - - - - - - -
+nucats = 50;
+maxx = max(x);
+diffcat = maxx/nucats;
+ucats = zeros(nucats,1);
+for i = 1:nucats
+   ucats(i) = i*diffcat;
+end
+
+ulabels = zeros(1,length(x));
+for k = 1:length(x)
+    nunits = x(k);
+    categ = 1;
+    while nunits > ucats(categ)
+        categ = categ + 1;
+    end
+    ulabels(k) = categ;
+end
+
+% - - - - - - - Now PMI - - - - - - 
+MImat = zeros(nampcats,nucats);
+for k = 1:length(x)
+    albl = amplabels(k);
+    ulbl = ulabels(k);
+    MImat(albl,ulbl) =  MImat(albl,ulbl) + 1;
+end
+
+MImat = MImat / length(x);
+
+for aa = 1:nampcats
+    Paa = length(find(amplabels == aa)) / length(amplabels);
+    for uu = 1:nucats
+        Puu = length(find(ulabels == uu)) / length(ulabels);
+        MImat(aa,uu) =  log(MImat(aa,uu) /(Paa*Puu));
+    end
+end
+
+subplot(1,2,2),colormap('Pink'), imagesc(MImat)
+title('Point-Mutual information')
+box off
+
+xlabel('Synchronous-unit bin')
+ylabel('Amplitude bin')
+
+suptitle('Event amplitude as a function of units sharing the spike')
 
 %%
+subplot(1,2,1)
+h1 = histogram(x,'Normalization','Probability');
+h1.FaceColor = [0.980, 0.501, 0.501];
+h1.FaceAlpha = 0.6;
+title('Distribution of cell synchrony')
+xlabel('Number of synchronous cells')
+ylabel('Probability')
+box off 
 
+subplot(1,2,2)
+h2 = histogram(y,'Normalization','Probability');
+h2.FaceColor = [0.980, 0.694, 0.501];
+h2.FaceAlpha = 0.6;
+title('Distribution of event amplitude')
+xlabel('Event amplitude (AU)')
+box off 
 
+suptitle('Probability distributions')
