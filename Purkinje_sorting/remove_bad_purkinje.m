@@ -17,6 +17,9 @@ function [cn_bis] = remove_bad_purkinje(cn,good_purkinje)
             cn_bis.roi{1,cell} = cn.roi{1,k};
             cn_bis.roi_landscape{1,cell} = cn.roi_landscape{1,k};
             cn_bis.centroid{1,cell} = cn.centroid{1,k};
+            if isfield(cn,'spikes')
+                cn_bis.spikes(:,cell) = cn.spikes(:,k);
+            end
             % . . . . . . . . . . . . . . . . .. . . . . . . . . . . . . . 
             cell = cell + 1;
         end
