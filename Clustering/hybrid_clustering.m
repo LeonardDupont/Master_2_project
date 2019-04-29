@@ -285,11 +285,7 @@ end
     % Hereunder, we start calculating distance matrices and fusing the 
     % close neighB vectors to form bigger neighbourhoods. 
 
-
-    Dmin = 1;
-    merge_events = 0;
-
-    disp([' ------ 6 - Now merging using hierarchical clustering, parameters Dmin = ',num2str(Dmin),' and Dthresh = ',num2str(cl.Dth),'------'])
+    disp(' ------ 6 - Now merging using hierarchical clustering ------')
 
     while Dmin ~= 987654321
     % while there exists a distance smaller than Dth...
