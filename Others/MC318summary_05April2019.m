@@ -40,11 +40,11 @@ clear criteria
 % Execute all steps independently
 clear good_purkinje
 % -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
-manual_roi_sorting(cns2s)
+manual_roi_sorting(cns4)
 % -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 good_purkinje = getglobal_purkinje;
 % -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
-cns2s = remove_bad_purkinje(cns2,good_purkinje); 
+cns4 = remove_bad_purkinje(cns4,good_purkinje); 
 % -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 
 %% PLOTS THEMSELVES 
@@ -72,73 +72,6 @@ subplot(1,3,2),purkinje_artscape(cns4s.mask,S4), title('Session 4')
 subplot(1,3,3),purkinje_artscape(cns5s.mask,S5), title('Session 5') 
 
 
-%% Manual spike count
-% - - - - - - - - - - - - - S2 manual spikes  - - - - - - - - - - - - - - -
-clear manual_spikes 
-manually_count_spikes(cns2s.intensity(:,S2(1)))
-spiketimes = getGlobal_manualspikes; 
-timings = zeros(1,length(cns2s.intensity(:,S2(1))));
-timings(spiketimes) = 1;
-cns2s.mspikes(1,:) = timings; 
-
-clear manual_spikes 
-manually_count_spikes(cns2s.intensity(:,S2(2)))
-spiketimes = getGlobal_manualspikes; 
-timings = zeros(1,length(cns2s.intensity(:,S2(1))));
-timings(spiketimes) = 1;
-cns2s.mspikes(2,:) = timings; 
-
-clear manual_spikes 
-manually_count_spikes(cns2s.intensity(:,S2(3)))
-spiketimes = getGlobal_manualspikes; 
-timings = zeros(1,length(cns2s.intensity(:,S2(1))));
-timings(spiketimes) = 1;
-cns2s.mspikes(3,:) = timings; 
-
-% - - - - - - - - - S4 manual spikes  - - - - - - - - - - - - - - - - - - -
-clear manual_spikes 
-manually_count_spikes(cns4s.intensity(:,S4(1)))
-spiketimes = getGlobal_manualspikes; 
-timings = zeros(1,length(cns4s.intensity(:,S4(1))));
-timings(spiketimes) = 1;
-cns4s.mspikes(1,:) = timings; 
-
-clear manual_spikes 
-manually_count_spikes(cns4s.intensity(:,S4(2)))
-spiketimes = getGlobal_manualspikes; 
-timings = zeros(1,length(cns4s.intensity(:,S4(1))));
-timings(spiketimes) = 1;
-cns4s.mspikes(2,:) = timings; 
-
-clear manual_spikes 
-manually_count_spikes(cns4s.intensity(:,S4(3)))
-spiketimes = getGlobal_manualspikes; 
-timings = zeros(1,length(cns4s.intensity(:,S4(1))));
-timings(spiketimes) = 1;
-cns4s.mspikes(3,:) = timings; 
-
-% - - - - - - - - - S5 manual spikes  - - - - - - - - - - - - - - - - - - -
-clear manual_spikes 
-manually_count_spikes(cns5s.intensity(:,S5(1)))
-spiketimes = getGlobal_manualspikes; 
-timings = zeros(1,length(cns5s.intensity(:,S5(1))));
-timings(spiketimes) = 1;
-cns5s.mspikes(1,:) = timings; 
-
-clear manual_spikes 
-manually_count_spikes(cns5s.intensity(:,S5(2)))
-spiketimes = getGlobal_manualspikes; 
-timings = zeros(1,length(cns5s.intensity(:,S5(1))));
-timings(spiketimes) = 1;
-cns5s.mspikes(2,:) = timings; 
-
-clear manual_spikes 
-manually_count_spikes(cns5s.intensity(:,S5(3)))
-spiketimes = getGlobal_manualspikes; 
-timings = zeros(1,length(cns5s.intensity(:,S5(1))));
-timings(spiketimes) = 1;
-cns5s.mspikes(3,:) = timings; 
-
 %% Automatic spike count
 
 ops.fs = 30;
@@ -159,7 +92,9 @@ sizes4 = size(cns4s.mask{1,1});
 sizes5 = size(cns5s.mask{1,1});
 pt_max = min([length(cns5s.intensity),length(cns4s.intensity),length(cns2s.intensity)]); 
 time = linspace(1,pt_max/30,pt_max); 
-%%
+%% This script bit plots a mask on top, then the fluorescence trace with the deconvolution and a zoom on it under
+% It does so for all 3 selected cells in all 3 sessions. 
+
 offset = 1;
 for i = 1:nrois
     figure('Renderer', 'painters', 'Position', [500 500 900 600])
@@ -654,8 +589,11 @@ for k = 1:length(acclabels)
     end
 end
 xcacc = get_speedregime_boundaries(acclabels);
-fluo_x_accelerationpeaks(cns4s.intensity,accs4,acccolors,xcacc)
-%%
+fluo_x_accelerationpeaks(cns4.intensity,accs4,acccolors,xcacc)
+%% PMI for mean calcium trace
+
+m_cas4 = mean(cns4.intensity,2).'; 
+
 naccat = 3;
 colormap = hot(naccat);
 
@@ -711,11 +649,11 @@ xticklabels({'Decceleration','Ground state','Acceleration'})
 nfluocats = 20;
 Nimbins = nfluocats;
 clear PMI
-for roi = 1:cns4s.n_cells
+for roi = 1:cns4.n_cells
     
     MImat = zeros(Nimbins,Ntmbins);
-    fluocats = define_fluocats(cns4s.intensity(:,roi),nfluocats);
-    fluolabels = assign_fluolabels(cns4s.intensity(:,roi),fluocats);
+    fluocats = define_fluocats(cns4.intensity(:,roi),nfluocats);
+    fluolabels = assign_fluolabels(cns4.intensity(:,roi),fluocats);
 
     for k = 1:Tim
         imlbl = fluolabels(k);
@@ -741,16 +679,17 @@ for roi = 1:cns4s.n_cells
     
     mMI = max(MImat(:));
     MImat = MImat / mMI;
-    subplot(4,20,roi), imagesc(MImat), axis off, title(num2str(roi))
+    colormap('Parula')
+    subplot(10,19,roi), imagesc(MImat), axis off, title(num2str(roi))
     PMI.(['roi_',num2str(roi)]) = MImat;
 end
 suptitle('Cell-resoluted PMI between acceleration and fluorescence')
 
 %%
-PMIcoord = zeros(cns4s.n_cells,3);
+PMIcoord = zeros(cns4.n_cells,3);
 start = 18 ;
 stop = nfluobins;
-for roi = 1:cns4s.n_cells
+for roi = 1:cns4.n_cells
     MImat = PMI.(['roi_',num2str(roi)]);
     for j = 1:3
        PMIcoord(roi,j) = mean(MImat(start:stop,j))/mean(MImat(:));
@@ -767,7 +706,7 @@ K = 3;
 indx = kmeans(PMIcoord,K);
 cmap = parula(K);
 subplot(1,2,2), hold on
-for roi = 1:cns4s.n_cells
+for roi = 1:cns4.n_cells
     ii = indx(roi);
     scatter3(PMIcoord(roi,1),PMIcoord(roi,2),PMIcoord(roi,3),[],cmap(ii,:),'filled'), grid on
     text(PMIcoord(roi,1),PMIcoord(roi,2),PMIcoord(roi,3),num2str(roi),'color',cmap(ii,:))
@@ -787,7 +726,7 @@ for k = 1:K
         mPMI = mPMI + PMI.(['roi_',num2str(cl(i))]);
     end
     mPMI = mPMI/L;
-    subplot(1,K,k), imagesc(mPMI), box off 
+    subplot(1,K,k), colormap('Gray'), imagesc(mPMI), box off 
     colorbar 
     if k == 1
         ylabel('Fluorescence bins')
@@ -805,19 +744,19 @@ hold off
 %%
 figure, hold on
 cmap = parula(K);
-S = size(cns4s.mask{1,1});
+S = size(cns4.mask{1,1});
 for k = 1:K
     cl = find(indx == k);
     L = length(cl);
     c = cmap(k,:);
-    full = categ(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
+    full = cat(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
     for i = 1:L
         roi = cl(i);
-        posi = cns4s.centroid{1,roi};
+        posi = cns4.centroid{1,roi};
         x = posi(1);
         y = posi(2);
         text(x,y,num2str(roi),'Color',c)
-        I = cns4s.mask{1,roi};
+        I = cns4.mask{1,roi};
         h = imshow(full); hold on 
         set(h, 'AlphaData', I*0.35) , hold on
     end
@@ -895,7 +834,10 @@ figure, plot(sm_synchrony)
 
 %% PSTH
 % Mystery with this plot is time alignement of subplots
-subplot(7,1,1:5);
+% 1 : rasterplot with acceleration colorcode
+% 2 : psth-like plot
+% 3 : corresponding synchrony = f(t) (should look alike)
+ah1 = subplot(7,1,1:5);
 height = 1;
 spacing = 0.5;
 N = cns4s.n_cells;
@@ -938,12 +880,11 @@ ylabel('Units')
 xticks([])
 yticks([])
 
-subplot(7,1,6);
+ah2 = subplot(7,1,6);
 sumSPK = zeros(length(cns4s.intensity(1:im_max,1)),1);
-for k = 1:length(cns4s.intensity(1:im_max,1))
+for k = 1:length(cns4s.spikes(1:im_max,1))
     spkthistime = cns4s.spikes(k,:);
     sumSPK(k) = sum(spkthistime);
-   
 end
 
 for k = 1:length(xcacc)-1
@@ -960,18 +901,18 @@ end
 
 xb = linspace(1,length(sumSPK)/30,length(sumSPK));
 clear spkthistime
-b = bar(xb,sumSPK); axis tight, hold on 
+b = bar(xb,sumSPK); hold on 
 b.FaceColor = 'k';
 %b.BarWidth = 1;
 b.FaceAlpha = 1;
 b.EdgeColor = 'k';
 b.EdgeAlpha = 1;
 
-
+xlim([1,145])
 xticks([])
 ylabel('N_{spikes}')
 
-subplot(7,1,7);
+ah3 = subplot(7,1,7);
 for k = 1:length(xcacc)-1
     xplus = xcacc(k+1);
     xminus = xcacc(k);
@@ -985,7 +926,7 @@ for k = 1:length(xcacc)-1
 end
 
 x = linspace(1,im_max/30,im_max);
-plot(x,sm_synchrony(1:im_max),'color','k'), axis tight, hold on
+plot(x,sm_synchrony(1:im_max),'color','k'), hold on
 
 
 tt = linspace(1,im_max/30,10);
@@ -995,14 +936,14 @@ for j = 1:length(tt)
     lbls(j) = num2cell(round(tt(j)));
 end
 ylabel('Synchrony')
-set('gca','XTick',tt,'XTickLabel',lbls)
+xticks(tt)
+xticklabels(lbls)
 xlabel('Time (s)')
+xlim([1,145])
 box off
 hold off 
 
-
-h=get(gcf,'children');
-linkaxes(h,'x')
+linkaxes([ah1,ah2,ah3],'x')
 
 %% EVENT AMPLITUDE AND CELL SYNCHRONY
 % It seems that because of scattering in the 1P microscope, events that
@@ -1140,3 +1081,42 @@ xlabel('Event amplitude (AU)')
 box off 
 
 suptitle('Probability distributions')
+%%
+
+clear cl
+cl.K = 3;
+cl.runs = 4000;
+cl.spatialplot = 1;
+cl.frame_path = '/Users/leonarddupont/Desktop/M2_internship/registration_templateS4.tif';
+cl.normalise = 1;
+cl.p = 0.8;
+cl.Z = 5;
+cl.Nmin = 3;
+cl.Nmax = 10; 
+
+% . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+[activity_clusters,~] = hybrid_clusteringDB(cns4,cl);
+% . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+%%
+
+clear opts4
+opts4.framepath = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_templateS4.tif' ;
+opts4.wsize = 1;
+opts4.Nmax = 10;
+opts4.Nmin = 3;
+opts4.min_units = 5;
+
+clear grphcs
+grphcs.dendrogram = 1;
+grphcs.orgdistMAT = 1;
+grphcs.orgchanceMAT = 1;
+grphcs.porgchanceMAT = 1;
+grphcs.clusteredlandscape = 1;
+
+% . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+synchresultS4 = synchrony_clustering(cns4,opts4,grphcs); 
+% . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+
+
