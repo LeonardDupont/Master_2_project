@@ -62,6 +62,7 @@ opts = check_empty(opts,'Nmin',2);
 opts = check_empty(opts,'epsilon',1e-4);
 opts = check_empty(opts,'framepath',[]);
 opts = check_empty(opts,'min_units',3); 
+opts = check_empty(opts,'wsize',2); 
 
 grphcs = check_empty(grphcs,'dendrogram',0);
 grphcs = check_empty(grphcs,'distMAT',0);
@@ -77,11 +78,12 @@ disp('1 - Building synchrony and chance matrices out of spiketimes.')
 synchMAT = zeros(N,N);
 chanceMAT = zeros(N,N);
 tic
+wsize = opts.wsize;
 for i = 1:N
     x = cn.spikes(:,i).';
     parfor j = 1:N
         y = cn.spikes(:,j).';
-        [Q,~,~,taumin] = est_trace_synchrony(x,y);
+        [Q,~,~,taumin] = est_trace_synchrony(x,y,'wsize',wsize);
         synchMAT(i,j) = Q;
         chanceMAT(i,j) = est_synchrony_reliability(x,y,taumin); 
         distMAT(i,j) = 1 - synchMAT(i,j);
