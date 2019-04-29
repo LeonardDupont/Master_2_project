@@ -232,7 +232,11 @@ for k = 1:nconfig
                 cl = cl + 1;
             end
         end
-        Dvals(i) = max(Rij); 
+        if ~isempty(Rij)
+             Dvals(i) = max(Rij); 
+        else
+            Dvals(i) = 1e3;
+        end
         %it's a worst case scenario, we take the greatest Rij among all
         %intercluster comparisons.
     end
