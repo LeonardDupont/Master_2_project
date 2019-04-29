@@ -14,6 +14,8 @@ function [Q,Qprime,qprime,taumin] = est_trace_synchrony(x,y,varargin)
 %       y       vector of size t with my events (1s)
 %   varargin    'derivative'      @ logical      if you want to compute
 %                                                time-resolved synchrony
+%               'wsize'           @double        nb of frames to consider
+%                                                synchroneous spikes 
 %
 %   --- OUTPUT -----
 % 
@@ -25,9 +27,12 @@ function [Q,Qprime,qprime,taumin] = est_trace_synchrony(x,y,varargin)
 
 ip = inputParser;
 ip.addParameter('derivative',0);
+ip.addParameter('wsize',2); %in frames, id est datapoints
 parse(ip,varargin{:});
 
 derivative = logical(ip.Results.derivative);
+wsize = ip.Results.wsize;
+
 %% Q (symmetry)
 
 tx = find(x==1);
@@ -35,8 +40,8 @@ ty = find(y==1);
 
 dn = 5;
 
-[cxy,tauminxy] = get_c(tx,ty);
-[cyx,tauminyx] = get_c(ty,tx);
+[cxy,tauminxy] = get_c(tx,ty,wsize);
+[cyx,tauminyx] = get_c(ty,tx,wsize);
 
 taumin = min(tauminxy,tauminyx);
 
@@ -98,9 +103,9 @@ end
 % stpfc : simple (actually could use (n>0) to get a logical) function that
 %         outputs 1 if x > 0, 0 otherwise. 
 
-    function [cxy,taumin] = get_c(tx,ty,n)
+    function [cxy,taumin] = get_c(tx,ty,wsize,n)
         
-        if nargin < 3
+        if nargin < 4
             usestep = false;
         else
             usestep = true;
@@ -127,7 +132,7 @@ end
                     
                     all = cat(2,alli,allj);
                     tau1 = min(all)/2;
-                    tau = min(2,tau1);
+                    tau = min(wsize,tau1);
                     if tau < taumin
                         taumin = tau;
                     end
@@ -167,7 +172,7 @@ end
                     
                     all = cat(2,alli,allj);
                     tau1 = min(all)/2;
-                    tau = min(2,tau1);
+                    tau = min(wsize,tau1);
                     if tau < taumin
                         taumin = tau;
                     end
@@ -194,7 +199,7 @@ end
             
         elseif mx == 1 && my == 1
             dt = tx(1) - ty(1);
-            tau = 2;
+            tau = wsize;
                 if dt>0 && dt<tau
                     Jij = 1;
                 elseif dt == 0
@@ -233,7 +238,7 @@ end
 
                     all = cat(2,alli,allj);
                     tau1 = min(all)/2;
-                    tau = min(2,tau1);
+                    tau = min(wsize,tau1);
                     if tau < taumin
                         taumin = tau;
                     end
