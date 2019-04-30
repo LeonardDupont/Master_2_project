@@ -1,4 +1,4 @@
-function [Q,Qprime,qprime,taumin] = est_trace_synchrony(x,y,varargin)
+function [Q,Qprime,qprime,taumin] = est_trace_synchrony(x,y,wsize,varargin)
 %% March 2019 - CareyLab - leonard.dupont@ens.fr
 % .........................................................................
 % This function takes two lists x and y of size t (datapoints acquired at
@@ -12,10 +12,10 @@ function [Q,Qprime,qprime,taumin] = est_trace_synchrony(x,y,varargin)
 %
 %       x       vector of size t with mx events (1s)
 %       y       vector of size t with my events (1s)
+%   wsize     limit number of frames to consider 2 events as synchronous
+%
 %   varargin    'derivative'      @ logical      if you want to compute
 %                                                time-resolved synchrony
-%               'wsize'           @double        nb of frames to consider
-%                                                synchroneous spikes 
 %
 %   --- OUTPUT -----
 % 
@@ -27,11 +27,9 @@ function [Q,Qprime,qprime,taumin] = est_trace_synchrony(x,y,varargin)
 
 ip = inputParser;
 ip.addParameter('derivative',0);
-ip.addParameter('wsize',2); %in frames, id est datapoints
 parse(ip,varargin{:});
 
 derivative = logical(ip.Results.derivative);
-wsize = ip.Results.wsize;
 
 %% Q (symmetry)
 

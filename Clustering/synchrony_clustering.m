@@ -23,6 +23,10 @@ function [results] = synchrony_clustering(cn,opts,grphcs)
 %                .Nmin         @double     minimal number of clusters
 %                .epsilon      @double     step used in find_cutoff_DB.m
 %                .min_units    @double     minimal nb of units to count cl
+%                .wsize        @double     window size (frames) to consider
+%                                          synchrony
+%                .computechance @logical   if you want to compute the
+%                                          chanceMAT
 %
 %   grphcs     struct of options with fields (all boolean)
 %                .dendrogram
@@ -63,6 +67,7 @@ opts = check_empty(opts,'epsilon',1e-4);
 opts = check_empty(opts,'framepath',[]);
 opts = check_empty(opts,'min_units',3); 
 opts = check_empty(opts,'wsize',2); 
+opts = check_empty(opts,'computechance',1); 
 
 grphcs = check_empty(grphcs,'dendrogram',0);
 grphcs = check_empty(grphcs,'distMAT',0);
@@ -79,14 +84,18 @@ synchMAT = zeros(N,N);
 chanceMAT = zeros(N,N);
 tic
 wsize = opts.wsize;
+cnspk = cn.spikes; 
+computechance = opts.computechance; 
 for i = 1:N
-    x = cn.spikes(:,i).';
+    x = cnspk(:,i).';
     parfor j = 1:N
-        y = cn.spikes(:,j).';
-        [Q,~,~,taumin] = est_trace_synchrony(x,y,'wsize',wsize);
+        y = cnspk(:,j).';
+        [Q,~,~,taumin] = est_trace_synchrony(x,y,wsize);
         synchMAT(i,j) = Q;
-        chanceMAT(i,j) = est_synchrony_reliability(x,y,taumin); 
         distMAT(i,j) = 1 - synchMAT(i,j);
+        if computechance
+            chanceMAT(i,j) = est_synchrony_reliability(x,y,taumin); 
+        end
     end
     percent = i*100/N; 
     if rem(floor(percent),5) == 0
