@@ -1,4 +1,4 @@
-function [activity_clusters,C] = hybrid_clusteringDB(data,cl)
+function [activity_clusters] = hybrid_clusteringDB(data,cl)
 %% March 2019 - Carey lab - leonard.dupont@ens.fr
 %..........................................................................
 % This whole script is dedicated to an attempt of spatially clustering the
@@ -40,12 +40,9 @@ function [activity_clusters,C] = hybrid_clusteringDB(data,cl)
 % -- OUTPUT -----------
 %
 %    activity_clusters      struct with fields
-%                           >    cluster_i    >  roi_j > centroid [x,y]
-%                                  (...)               > spiketimes
-%                                                      > raw_trace (Fluo.)                        
-%                                             >  (...)
+%                           
 %                   
-%                    C      correlation matrix               
+            
 
 %% function parameters 
 
@@ -267,22 +264,21 @@ end
 
     disp(' ------ 6 - Now merging using hierarchical clustering ------')
 
-    simMAT = zeros(N,N);
+    distMAT = zeros(N,N);
     for k = 1:N
         R1 = neighbourhood.(['roi_',num2str(k)]).neighB;
         for j = 1:N
             R2 = neighbourhood.(['roi_',num2str(j)]).neighB;
-            simMAT(k,j) = length(intersect(R1,R2))/max(length(R1),length(R2));
+            distMAT(k,j) = 1 - (length(intersect(R1,R2))/max(length(R1),length(R2)));
         end
     end
     
-    distMAT = 1 - simMAT; 
     y = squareform(distMAT);
     LK = linkage(y,'average');
     
     [Cvopt,Topt, ~] = ...
      find_cutoff_DB(LK,distMAT,'epsilon',1e-4,'Nmax',...
-     cl.Nmax,'Nmin',cl.Nmin,'min_units',5);
+     cl.Nmax,'Nmin',cl.Nmin,'min_units',cl.Z);
     
     T = Topt;
     Nclust = max(T); 
@@ -410,6 +406,7 @@ end
 
     figure, subplot(1,2,1), colormap('Gray'), imagesc(distMAT)
     subplot(1,2,2),  colormap('Gray'), imagesc(orgdistMAT)
+    suptitle('Distance matrices before and after clustering'), hold off 
 
 
     %% 10 - Correlation matrix
@@ -428,6 +425,13 @@ end
         end
     end
 
+    activity_clusters.corrMAT = C; 
+    activity_clusters.distMAT = distMAT;
+    activity_clusters.orgdistMAT = orgdistMAT;
+    activity_clusters.Nclust = Nclust;
+    activity_clusters.Ncells = length(find(T ~= 0));
+    activity_clusters.treeCV = Cvopt; 
+    
     %% 11 - plots
     % A scatter plot with the registration template and a rasterplot 
     % are the two available options
