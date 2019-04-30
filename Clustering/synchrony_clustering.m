@@ -146,23 +146,29 @@ N = cn.n_cells;
 clear activity_cluster
 clear reorganised
 reorganised = [];
+uu = 1;  %will help counting the real (card > min_units) clusters
 for k = 1:Nclust
     rois = find(T == k);
     l = length(rois);
-    activity_cluster.clusterregions{1,k} = rois;
-    for i = 1:l
-        reorganised(end+1) = rois(i);
-        activity_cluster.centroid{k,i} = cn.centroid{1,rois(i)};
-        activity_cluster.mask{k,i} = cn.mask{1,rois(i)};
+    if l > opts.min_units
+        activity_cluster.clusterregions{1,uu} = rois;
+        for i = 1:l
+            reorganised(end+1) = rois(i);
+            activity_cluster.centroid{uu,i} = cn.centroid{1,rois(i)};
+            activity_cluster.mask{uu,i} = cn.mask{1,rois(i)};
+        end 
+        uu = uu + 1; 
     end
-
 end
+
+Nclust = uu; %the actual number of clusters
 
 orgdistMAT = zeros(N,N);
 orgchanceMAT = zeros(N,N);
-for k = 1:N
+Ncl = length(reorganised);
+for k = 1:Ncl
     r1 = reorganised(k);
-    for j = 1:N
+    for j = 1:Ncl
         r2 = reorganised(j);
         orgdistMAT(k,j) = distMAT(r1,r2);
         orgchanceMAT(k,j) = chanceMAT(r1,r2);
