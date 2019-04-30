@@ -459,7 +459,7 @@ end
                  posi = activity_clusters.centroid{k,roi};
                  x = posi(1);
                  y = posi(2);
-                 text(x,y,num2str(names(roi)),'Color',c)
+                 %text(x,y,num2str(names(roi)),'Color',c)
                  I = cn.mask{1,actual};
                  h = imshow(full); hold on 
                  set(h, 'AlphaData', I*0.35) , hold on
@@ -475,7 +475,7 @@ end
                  posi = cn.centroid{1,actual};
                  x = posi(1);
                  y = posi(2);
-                 text(x,y,num2str(names(roi)),'Color',c)
+                 %text(x,y,num2str(names(roi)),'Color',c)
                  I = cn.mask{1,actual};
                  h = imshow(full); hold on 
                  set(h, 'AlphaData', I*0.35) , hold on
