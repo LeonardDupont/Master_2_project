@@ -950,24 +950,24 @@ linkaxes([ah1,ah2,ah3],'x')
 % correspond to huge synchronisations are reflected by high-fluorescence
 % events in the calcium traces. Here we quantify this phenomenon.
 
-for i = 1:cns4s.n_cells
-    spikes = cns4s.spikes(:,i);
-    calcium = cns4s.intensity(:,i) - min(cns4s.intensity(:,i)); %assuming flat baseline
+for i = 1:cns4.n_cells
+    spikes = cns4.spikes(:,i);
+    calcium = (cns4.intensity(:,i) - min(cns4.intensity(:,i)))/mean(cns4.intensity(:,i)); %assuming flat baseline
     spktimes = find(spikes == 1);
-    eventheight = zeros(length(cns4s.spikes(:,i)),1);
+    eventheight = zeros(length(cns4.spikes(:,i)),1);
     for k = 1:length(spktimes)
         t = spktimes(k);
         eventheight(t) = mean(calcium(t:t+2));
     end
-    cns4s.eventheight(:,i) = eventheight; 
+    cns4.eventheight(:,i) = eventheight; 
 end
 
 clear spkamp_coord
 c = 1;
-for k = 1:length(cns4s.intensity)
-    spkunits = find(cns4s.spikes(k,:) == 1);
+for k = 1:length(cns4.intensity)
+    spkunits = find(cns4.spikes(k,:) == 1);
     Nunits = length(spkunits);
-    spkamp_coord(1,c) = mean(cns4s.eventheight(k,:));
+    spkamp_coord(1,c) = mean(cns4.eventheight(k,:));
     spkamp_coord(2,c) = Nunits;
     c = c + 1;
 end
@@ -983,7 +983,7 @@ s.MarkerFaceAlpha = 1;
 s.MarkerEdgeColor = [0.767816699258443   0.516358225453477   0.506171068243531];
 s.MarkerEdgeAlpha = 0.5;
 xlabel('Number of synchronous cells')
-ylabel(sprintf('Event amplitude\n(fluorescence units)'))
+ylabel('Event amplitude (\Delta F/ F)')
 
 
 X = cat(1,ones(1,length(x)),x);
@@ -1063,21 +1063,24 @@ ylabel('Amplitude bin')
 suptitle('Event amplitude as a function of units sharing the spike')
 
 %%
+cmap = pink(25); 
 subplot(1,2,1)
-h1 = histogram(x,'Normalization','Probability');
-h1.FaceColor = [0.980, 0.501, 0.501];
+h1 = histogram(x,'binwidth',1,'Normalization','Probability');
+%h1.FaceColor = [0.980, 0.501, 0.501];
+h1.FaceColor = cmap(8,:);
 h1.FaceAlpha = 0.6;
-title('Distribution of cell synchrony')
 xlabel('Number of synchronous cells')
 ylabel('Probability')
 box off 
 
 subplot(1,2,2)
-h2 = histogram(y,'Normalization','Probability');
-h2.FaceColor = [0.980, 0.694, 0.501];
+h2 = histogram(y,'binwidth',0.005,'Normalization','Probability');
+xlim([1e-4,0.1])
+%h2.FaceColor = [0.980, 0.694, 0.501];
+h2.FaceColor = cmap(20,:);
 h2.FaceAlpha = 0.6;
-title('Distribution of event amplitude')
-xlabel('Event amplitude (AU)')
+xlabel('Event amplitude (\Delta F /F)')
+ylabel('Probability')
 box off 
 
 suptitle('Probability distributions')
@@ -1085,9 +1088,9 @@ suptitle('Probability distributions')
 
 clear cl
 cl.K = 3;
-cl.runs = 4000;
+cl.runs = 2500 ;
 cl.spatialplot = 1;
-cl.frame_path = '/Users/leonarddupont/Desktop/M2_internship/registration_templateS4.tif';
+cl.frame_path = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template.tif';
 cl.normalise = 1;
 cl.p = 0.8;
 cl.Z = 5;
@@ -1095,7 +1098,7 @@ cl.Nmin = 3;
 cl.Nmax = 10; 
 
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-[activity_clusters,~] = hybrid_clusteringDB(cns4,cl);
+activity_clustersK4 = hybrid_clusteringDB(cns4,cl);
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 %%
@@ -1104,7 +1107,7 @@ clear opts4
 opts4.framepath = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_templateS4.tif' ;
 opts4.wsize = 1;
 opts4.Nmax = 10;
-opts4.Nmin = 3;
+opts4.Nmin = 1;
 opts4.min_units = 5;
 
 clear grphcs
@@ -1117,6 +1120,8 @@ grphcs.clusteredlandscape = 1;
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 synchresultS4 = synchrony_clustering(cns4,opts4,grphcs); 
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+%%
 
 
 

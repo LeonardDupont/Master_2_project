@@ -35,7 +35,7 @@ function [PMI] = point_mutual_info(var1,ncats1,var2,ncats2,varargin)
 ip = inputParser;
 
 ip.addParameter('withlog',1);
-ip.addParameter('showmat',0)
+ip.addParameter('showmat',1)
 parse(ip,varargin{:});
 
 withlog = logical(ip.Results.withlog);
@@ -70,10 +70,10 @@ if L1 > L2
    mergeF = floor(L1/L2);
    aside = rem(L1,L2);
    var1bis = zeros(L2,1);
-   for k = 1:mergeF
-       start = (k-1)*mergeF;
-       stop = k*mergeF;
-       var1bis(k) = mean(var1(start:stop)) + (k==mergeF)*aside;
+   for k = 1:L2
+       start = (k-1)*mergeF + 1;
+       stop = k*mergeF + (k==mergeF)*aside;
+       var1bis(k) = mean(var1(start:stop));
    end
    var1 = var1bis;
    clear var1bis
@@ -106,7 +106,7 @@ labels2 = zeros(L,1);
 % ------- var1 --------
 for k = 1:L
     cat = 1;
-    while var1(k) > cats1(cat)
+    while var1(k) > cats1(cat) && (cat < ncats1)
         cat = cat + 1;
     end
     labels1(k) = cat; 
@@ -114,7 +114,7 @@ end
 % ------- var2 --------
 for j = 1:L
     cat = 1;
-    while var2(j) > cats2(cat)
+    while var2(j) > cats2(cat) && (cat < ncats2)
         cat = cat + 1;
     end
     labels2(j) = cat;

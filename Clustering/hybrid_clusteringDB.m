@@ -276,10 +276,12 @@ end
     y = squareform(distMAT);
     LK = linkage(y,'average');
     
-    [Cvopt,Topt, ~] = ...
+    [Cvopt,Topt, results] = ...
      find_cutoff_DB(LK,distMAT,'epsilon',1e-4,'Nmax',...
      cl.Nmax,'Nmin',cl.Nmin,'min_units',cl.Z);
     
+    minDB = min(results(2,:)); 
+ 
     T = Topt;
     Nclust = max(T); 
     clear Topt
@@ -430,7 +432,8 @@ end
     activity_clusters.orgdistMAT = orgdistMAT;
     activity_clusters.Nclust = Nclust;
     activity_clusters.Ncells = length(find(T ~= 0));
-    activity_clusters.treeCV = Cvopt; 
+    activity_clusters.treeCV = Cvopt;
+    activity_clusters.DB = minDB; 
     
     %% 11 - plots
     % A scatter plot with the registration template and a rasterplot 

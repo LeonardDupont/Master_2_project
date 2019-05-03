@@ -3,20 +3,21 @@ function [] = purkinje_artscape(masks,rois)
 if nargin < 2
     N = length(masks);
     rois = linspace(1,N,N);
-    cmap = jet(N);
+    cmap = pink(2*N);
 else
     N = length(rois);
-    cmap = jet(N);
+    cmap = pink(2*N);
 end
 
 S = size(masks{1,1});
-white = cat(3,zeros(S),zeros(S),zeros(S)); 
-h = imshow(white); hold on 
+%bkg = cat(3,zeros(S),zeros(S),zeros(S)); %black
+bkg = cat(3,ones(S),ones(S),ones(S)); %white
+h = imshow(bkg); hold on 
 
 for r = 1:N 
    art = rois(r);  
    I = masks{1,art};
-   c = cmap(r,:);
+   c = cmap(r+round(N/2),:);
    full = cat(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
    h = imshow(full); hold on 
    set(h, 'AlphaData', I) , hold on
