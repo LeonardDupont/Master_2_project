@@ -30,8 +30,7 @@ params_list.plot = {'stance_length', 'stance_duration', 'stance_speed', ...
      'double_support', 'step_length', 'coo_body'};
 
  
-tracking_dir = [];
-tracking_dir = 'Z:\LocomotionExperiments\RT Self-paced\LocomotorLearning\TM TRACKING FILES\20181018 - water deprived first test';
+tracking_dir = 'Z:\leonard.dupont\TM TRACKING FILES\voluntary locomotion';
 
 platform = get_default_widefield_rotary_treadmill_parameters(2);
 [dirs] = LocomotionAnalysis(tracking_dir, platform, params_list, options);
@@ -44,8 +43,8 @@ platform = get_default_widefield_rotary_treadmill_parameters(2);
 % the output file should be the parent folder of the animals
 %input_path = 'Z:\LocomotionExperiments\RT Self-paced\Imaging\TM RAW FILES\voluntary locomotion\H1\S4';
 %input_path = 'Z:\hugo.marques\LocomotionExperiments\RT Self-paced\Imaging\TM IMAGING FILES\voluntary locomotion\MC318\S2\concatenated.tif';
-input_path = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S2';
-output_path = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S2';
+input_path = 'C:\Users\Utilizador\Documents\S5\Dend_Encoder_Files\Analysis\TM RAW FILES\MCJORGE\S1\';
+output_path = 'C:\Users\Utilizador\Documents\S5\Dend_Encoder_Files\Analysis\TM IMAGING FILES\';
 %input_path = output_path;
 
 dirs = get_directory_tree_from_path(input_path);
@@ -79,8 +78,8 @@ process_imaging_pipeline(input_path, output_path, options);
 
 %% concatenate videos to make the analysis statistically relevant
 
-input_concatenate = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S2';
-output_concatenate = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S2';
+input_concatenate = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion brake\MC1472\S2';
+output_concatenate = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion brake\MC1472\S2';
 
 N = 5 ; %concatenation group size
 
@@ -88,20 +87,27 @@ concatenate_mukamel(N,input_concatenate,output_concatenate)
 
 %% Median filtering (Diogo) : removing the shutter noise by sacrifying temporal precision at first (3-frames sliding window)
 
-input_median = 'MC318_26_199_M_tied_134,000_141,000_2__concatenated_trials_15_16_1_27_29.tif'; 
+input_median = 'MC1472_21_106_M_tied_138,000_137,000_2__concatenated_trials_6_7_8_98_99_9.tif'; 
 
 [~] = med_filter_calcium(input_median); 
 
 %%
+
+cadata = imread_tifflib('C:\Users\Utilizador\Documents\S5\Dend_Encoder_Files\Analysis\'); 
+cadata = uint16(cadata); 
+save_tiff(cadata,'C:\Users\Utilizador\Documents\S5\Dend_Encoder_Files\Dend_010_16bits.tif')
+
+%%
+
 % extract rois using mukamel
 %TODO: consider concatenating a few videos beforehand (see above)
 options.nPCs = 400;
 options.used_PCs = 1:350; % if this value is empty the algorithm prompts the user for manual selection
 options.mu = 0.15;
 
-cells_sort_file_muk = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5\MC318_26_218_F_tied_138,000_137,000_5__concatenated_trials_1_25_27_51.tif';
-cells_sort_file_reg = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5\MC318_26_218_F_tied_138,000_137,000_5__concatenated_trials_1_25_27_51.tif'; 
-cells_sort_out_folder = 'Z:\leonard.dupont\TM IMAGING PROCESSING FILES\voluntary locomotion\MC318\S4\mukamel_concatenated_mu0.15';
+cells_sort_file_muk = 'C:\Users\Utilizador\Documents\S5\Dend_Encoder_Files\Dend_010_16bits.tif';
+cells_sort_file_reg = 'C:\Users\Utilizador\Documents\S5\Dend_Encoder_Files\Dend_010_16bits.tif';
+cells_sort_out_folder = 'C:\Users\Utilizador\Documents\S5\Dend_Encoder_Files\Processed';
 create_folder_path(cells_sort_out_folder);
 
 
@@ -348,7 +354,7 @@ ops.sensorTau = 0.7;
 ops.estimateNeuropil = 0;
 ops.deconvType = 'L0'; 
 %ops.deconvType = 'OASIS';
-threshold = se_amp;
+threshold = 1000;
 [~, ~, ~, cn] = get_spikes_from_calcium_traces(cn.intensity, ops, threshold, cn, []);
 %[~, ~, ~, cn] = get_spikes_from_calcium_traces(cn.intensity_dm, ops, threshold, cn, []);
 
@@ -394,10 +400,10 @@ rasterplot(deconvolution)
 
 %% 3. Process session data
 
-session_raw_dir = 'Z:\leonard.dupont\TM RAW FILES\voluntary locomotion\MC318\S5';
-tracking_dir = 'Z:\leonard.dupont\TM TRACKED FILES\MC318\S5';
-imaging_dir = 'Z:\leonard.dupont\TM IMAGING FILES\voluntary locomotion\MC318\S5';
-session_output_dir = 'Z:\leonard.dupont\TM SESSION FILES\voluntary locomotion\';
+session_raw_dir = 'Z:\leonard.dupont\\TM RAW FILES\voluntary locomotion\MC318\S2';
+tracking_dir = 'Z:\leonard.dupont\\TM TRACKING FILES\voluntary locomotion\MC318\S2';
+imaging_dir = 'Z:\leonard.dupont\\TM IMAGING FILES\voluntary locomotion\MC318\S2';
+session_output_dir = 'Z:\leonard.dupont\TM SESSION FILES\voluntary locomotion\MC318\S2';
 
 [exp_files] = get_experimental_files_ordered_by_animal_session_and_trial(session_raw_dir, '*.tdms');
 platform = get_default_widefield_rotary_treadmill_parameters(2);
@@ -411,144 +417,4 @@ load('/Volumes/carey/leonard.dupont/TM SESSION FILES/voluntary locomotion/MC318/
 load('/Volumes/carey/leonard.dupont/TM SESSION FILES/voluntary locomotion/MC318/S5/port_data.mat')
 load('/Volumes/carey/leonard.dupont/TM SESSION FILES/voluntary locomotion/MC318/S5/tracking_data.mat')
 load('/Volumes/carey/leonard.dupont/TM SESSION FILES/voluntary locomotion/MC318/S5/treadmill_data.mat')
-
-%% Initial RTM analysis (26/03/2019)
-figure, hold on
-plot(tm.time,tm.speedM), axis tight
-calcium_data = cn.intensity_dm.';
-m_ca = mean(calcium_data,1);
-plot(im.time,m_ca)
-
-
-
-
-figure, hold on
-plot(tm.time(1:length(tm_speedM)),tm_speedMs), axis tight
-plot(linspace(0,tm.time(length(tm_speedM)),length(m_ca)),m_ca)
-
-
-% . . . . . . . . SPEED CATEGORIES ANALYSIS . . . . . . . . . . . . . . . . 
-ncat = 4; 
-
-tm_speedMs(tm_speedMs < 0) = 0;
-maxs = max(tm_speedMs);
-mins = min(tm_speedMs);
-
-diffcat = (maxs - mins)/ncat ;
-speedcats = zeros(ncat+1,1);
-for i = 1:ncat+1
-    speedcats(i) = mins + (i-1) * diffcat;
-end
-
-speed_labels = zeros(length(tm_speedM),1);
-for j = 1:length(tm_speedM)
-    cat = 1;
-    while tm_speedMs(j) > speedcats(cat)
-        cat = cat + 1;
-    end
-    speed_labels(j) = cat;
-end
-
-plot(speed_labels)
-
-ds = 100;
-
-cmap = jet(ncat+1);
-coord = linspace(1,length(tm_speedM),length(tm_speedM));
-speed_labelds = downsample(speed_labels,ds);
-tm_speedMds = downsample(tm_speedMs,ds);
-
-point = 1;
-xc = [];
-label = 0;
-while point < length(speed_labels)
-    nlabel = speed_labels(point);
-    if nlabel ~= label
-        xc(end+1) = point;
-        label = nlabel;
-    end
-    point = point + 1;
-end
-xc(end+1) = point;
-
-
-figure, hold on
-
-% plot_dummies for legend
-l1 = plot([NaN,NaN], 'color', cmap(1,:));
-l2 = plot([NaN,NaN], 'color', cmap(2,:));
-l3 = plot([NaN,NaN], 'color', cmap(3,:));
-l4 = plot([NaN,NaN], 'color', cmap(4,:));
-l5 = plot([NaN,NaN], 'color', cmap(5,:));
-legend([l1, l2, l3, l4, l5], {'vlow','low','medium','fast','vfast'},'AutoUpdate','off');
-
-for k = 1:length(xc)-1
-    xplus = xc(k+1);
-    xminus = xc(k);
-    label = speed_labels(xplus-1);
-    color = cmap(label,:);
-    
-    xl = [xminus, xminus, xplus, xplus];
-    yl = [0 100 100 0];
-    a = fill(xl,yl,color); hold on,
-    a.FaceAlpha = 0.4;
-    a.EdgeColor = 'none';
-end
-        
-axis tight, hold on
-plot(tm_speedMs*(100/maxs),':','color','k','LineWidth',1)
-
-imt = linspace(0,length(tm_speedMs),length(m_ca));
-plot(imt,m_ca*(100/max(m_ca)),'color','k','LineWidth',0.001)
-box off 
-yticklabels = [];
-
-tm_speedMds = downsample(tm_speedM,round(length(tm_speedM) / length(m_ca)));
-
-
-%% 
-cmap = parula(Nclust);
-chanceMAT(isnan(chanceMAT)) = 0;
-clear configuration
- for j = 1:Nclust
-     cc = find(T==j);
-     configuration.(['c',num2str(j)]) = cc;
- end
-
-  clusterprob = zeros(2,Nclust);
- for j = 1:Nclust
-     allcells = linspace(1,N,N);
-     cj = configuration.(['c',num2str(j)]);
-     Tj = length(cj);
-     intraprobability = 0;
-     for ii = 1:Tj
-         for jj = 1:Tj
-             intraprobability = intraprobability + chanceMAT(cj(ii),cj(jj));
-         end
-     end
-     intraprobability = intraprobability/(Tj^2); 
-     
-     % interprobability
-     allcells(cj) = []; 
-     Ncrpd = N - Tj; 
-     interprobability = 0;
-     for i = 1:Tj
-         for k = 1:Ncrpd
-             interprobability = interprobability + chanceMAT(cj(i),allcells(k));
-         end
-     end
-     interprobability = interprobability/(Tj*Ncrpd);
-     
-     clusterprob(1,j) = intraprobability;
-     clusterprob(2,j) = interprobability;
-     figure, hold on
-     h=bar(clusterprob(:,j)); 
-     barvalues(h,'%.4f')
-     set(h,'FaceColor',cmap(j,:)), 
-     title(['Cluster ',num2str(j)]),hold off 
- end
- 
-
-
-
 

@@ -207,7 +207,7 @@ if grphcs.clusteredlandscape
              posi = activity_cluster.centroid{k,roi};
              x = posi(1);
              y = posi(2);
-             text(x,y,num2str(names(roi)),'Color',c)
+             %text(x,y,num2str(names(roi)),'Color',c)
              I = activity_cluster.mask{k,roi};
              h = imshow(full); hold on 
              set(h, 'AlphaData', I*0.35) , hold on
