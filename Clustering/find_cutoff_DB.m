@@ -2,8 +2,8 @@ function [Cvopt,Topt,results] = find_cutoff_DB(Z,distMAT,varargin)
 %% April 2019 - CareyLab - leonard.dupont@ens.fr
 % .........................................................................
 % This function takes the linkage values from the hierarchical clustering
-% as well as the distance matrix and finds the optimal cutoff value (here:
-% synchrony) according to the Davies-Bouldin criterion. This criterion is a
+% as well as the distance matrix and finds the optimal cutoff value 
+% according to the Davies-Bouldin criterion. This criterion is a
 % cluster-dependent value that can be interpreted as:
 %
 %        DB(cluster) = intra-compactness / inter-dissimilarity
@@ -20,7 +20,6 @@ function [Cvopt,Topt,results] = find_cutoff_DB(Z,distMAT,varargin)
 % clusters to minimal one) while evaluating the corresponding cluster
 % configurations. At the end, the Cv that generated the most compact and
 % dissimilar groups wins and is given back to the user.
-%
 % .........................................................................
 %
 %    INPUT
@@ -49,7 +48,7 @@ ip = inputParser;
 ip.addParameter('Nmax',10);
 ip.addParameter('Nmin',2);
 ip.addParameter('epsilon',1e-4);
-ip.addParameter('min_units',3);
+ip.addParameter('min_units',1); %default : no restriction 
 parse(ip,varargin{:})
 Nmax = ip.Results.Nmax;
 Nmin = ip.Results.Nmin;
@@ -118,8 +117,9 @@ for k = 1:nconfig
     % first we create a struct that stores the clustering configuration
     T = clustCONFIG(:,k);
     Nclust = clustSIZE(k);
-    skipit = false;
     
+    % this whole bit implements the 'min_units' criterion 
+    skipit = false;
     badcl = 0;
     for j=1:Nclust
         cc = length(find(T==j));
@@ -139,6 +139,7 @@ for k = 1:nconfig
         continue
     end
     
+    %this is the current cluster configuration
     clear configuration
     for j = 1:Nclust
         cc = find(T==j);
