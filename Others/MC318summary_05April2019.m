@@ -682,12 +682,13 @@ for roi = 1:cns4.n_cells
     colormap('Parula')
     subplot(10,19,roi), imagesc(MImat), axis off, title(num2str(roi))
     PMI.(['roi_',num2str(roi)]) = MImat;
+    
 end
 suptitle('Cell-resoluted PMI between acceleration and fluorescence')
 
 %%
 PMIcoord = zeros(cns4.n_cells,3);
-start = 18 ;
+start = 17 ;
 stop = nfluobins;
 for roi = 1:cns4.n_cells
     MImat = PMI.(['roi_',num2str(roi)]);
@@ -721,9 +722,11 @@ figure, hold on
 for k = 1:K
     cl = find(indx == k);
     L = length(cl);
+    mintensity = zeros(length(cns4.intensity(:,1)),L);
     mPMI = zeros(20,3);
     for i = 1:L
         mPMI = mPMI + PMI.(['roi_',num2str(cl(i))]);
+        mintensity(:,i) = zero_and_max(cns4.intensity(:,cl(i)).').';  
     end
     mPMI = mPMI/L;
     subplot(1,K,k), colormap('Gray'), imagesc(mPMI), box off 
@@ -738,8 +741,143 @@ for k = 1:K
         yticks([])
     end
     title(['Cluster ',num2str(k)])
+    clintensity.(['cluster_',num2str(k)]) = mintensity; 
 end
 hold off 
+
+%%
+figure, hold on
+offset = 0;
+cvmat = zeros(K,K);
+for k = 1:K
+    inte = clintensity.(['cluster_',num2str(k)]);
+    inte = mean(inte,2);
+    inte = inte - min(inte); 
+    clintensity.(['cluster_',num2str(k)]) = inte; 
+    plot(inte,'color',cmap(k,:),'LineWidth',1)
+end
+
+%%
+inte1 = clintensity.(['cluster_',num2str(1)]);
+inte2 = clintensity.(['cluster_',num2str(2)]);
+inte3 = clintensity.(['cluster_',num2str(3)]);
+sortedvals = zeros(length(inte1),1); 
+ 
+figure, hold on
+time = linspace(1,length(accs4),length(inte1)); 
+pcateg = 1 ;
+start = 1;
+stop = 1;
+down = 0;
+for j = 1:K
+    inte = clintensity.(['cluster_',num2str(j)]);
+    for k = 1:length(inte1)
+        m = inte(k);
+        categ = 1;
+        while m > fluocats(categ)
+            categ = categ + 1;
+        end
+        if categ ~= pcateg 
+            xl = [start, start, stop, stop];
+            yl = [down, -0.05 + down, -0.05+down, down];
+            b = fill(xl*100,yl,cmap(j,:)*categ/20); hold on,
+            b.FaceAlpha = 1;
+            b.EdgeColor = 'none';
+            start = k;
+            stop = k + 1;
+            categ = maxi; 
+        else
+            stop = stop + 1;
+        end
+
+    end
+    down = down - 0.05;
+end
+plot(time,inte1,'color',cmap(1,:),'LineWidth',1), hold on
+plot(time,inte2,'color',cmap(2,:),'LineWidth',1), hold on
+plot(time,inte3,'color',cmap(3,:),'LineWidth',1), hold on
+
+for k = 1:length(xcacc)-1
+    xplus = xcacc(k+1);
+    xminus = xcacc(k);
+    color = acccolors(xplus-1,:);
+    
+    xl = [xminus, xminus, xplus, xplus];
+    yl = [-0 1.1 1.1 -0];
+    a = fill(xl,yl,color); hold on,
+    a.FaceAlpha = 0.2;
+    a.EdgeColor = 'none';
+end
+
+
+
+ylabel('\Delta F/F')
+
+axis tight 
+
+%%
+
+conditioned_fluovals = zeros(K,naccat);
+dsacclabels = zeros(Tim,1); 
+for j = 1:K
+    cl = find(indx == j);
+    L = length(cl);
+    nacclbl = zeros(3,1);
+    acc = [];
+    cst = [];
+    decc = [];
+
+    for i = 1:L
+        theintensity = zero_and_max(cns4.intensity(:,cl(i)).'); 
+        for k = 1:Tim
+            fluoval = theintensity(k); 
+            start = binboundaries(k);
+            stop = binboundaries(k+1);
+            acclbl = round(mean(acclabels(start:stop)));
+            dsacclabels(k) = acclbl;
+            if fluoval > 0.3
+                conditioned_fluovals(j,acclbl) = conditioned_fluovals(j,acclbl) + fluoval; 
+                nacclbl(acclbl) =  nacclbl(acclbl) + 1;
+                
+            end   
+            switch acclbl
+                    case 1
+                        decc(end+1) = fluoval;
+                    case 2
+                        cst(end+1) = fluoval;
+                    case 3
+                        acc(end+1) = fluoval; 
+            end 
+ 
+        end
+    end
+    
+    figure, title(['Cluster ',num2str(j)]), hold on
+    h1 = histogram(decc,'binwidth',0.005,'Normalization','countdensity');
+    h1.FaceColor = [0 0.3 0.9];
+    h1.FaceAlpha = 0.5;
+    
+    h2 = histogram(cst,'binwidth',0.005,'Normalization','countdensity');
+    h2.FaceColor =  [0.8 0.8 0.8];
+    h2.FaceAlpha = 0.5;
+    
+    h3 = histogram(acc,'binwidth',0.005,'Normalization','countdensity');
+    h3.FaceColor = [1 0.4 0.3];
+    h3.FaceAlpha = 0.5;
+    
+    hold off 
+   
+    for k = 1:naccat
+        conditioned_fluovals(j,k) = conditioned_fluovals(j,k)/nacclbl(k);
+    end
+
+    
+end
+
+figure, subplot(1,3,1), bar(conditioned_fluovals(1,:))
+subplot(1,3,2), bar(conditioned_fluovals(2,:))
+subplot(1,3,3), bar(conditioned_fluovals(3,:))
+
 
 %%
 figure, hold on
