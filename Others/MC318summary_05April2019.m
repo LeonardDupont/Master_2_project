@@ -689,7 +689,7 @@ suptitle('Cell-resoluted PMI between acceleration and fluorescence')
 %%
 PMIcoord = zeros(cns4.n_cells,3);
 start = 17 ;
-stop = nfluobins;
+stop = nfluocats;
 for roi = 1:cns4.n_cells
     MImat = PMI.(['roi_',num2str(roi)]);
     for j = 1:3
@@ -1090,7 +1090,7 @@ linkaxes([ah1,ah2,ah3],'x')
 
 for i = 1:cns4.n_cells
     spikes = cns4.spikes(:,i);
-    calcium = (cns4.intensity(:,i) - min(cns4.intensity(:,i)))/mean(cns4.intensity(:,i)); %assuming flat baseline
+    calcium = (cns4.intensity(:,i) - min(cns4.intensity(:,i)))/max(cns4.intensity(:,i)); %assuming flat baseline
     spktimes = find(spikes == 1);
     eventheight = zeros(length(cns4.spikes(:,i)),1);
     for k = 1:length(spktimes)
@@ -1100,15 +1100,77 @@ for i = 1:cns4.n_cells
     cns4.eventheight(:,i) = eventheight; 
 end
 
+
+
 clear spkamp_coord
 c = 1;
 for k = 1:length(cns4.intensity)
     spkunits = find(cns4.spikes(k,:) == 1);
     Nunits = length(spkunits);
+    if Nunits > 1
+        posvect = zeros(Nunits,2);
+        for i = 1:Nunits
+            roi = spkunits(i);
+            posvect(i,:) = cns4.centroid{1,roi};
+        end
+        xc = mean(posvect(:,1));
+        yc = mean(posvect(:,2));
+        maxdist = 0;
+        for i = 1:Nunits
+            x = posvect(i,1);
+            y = posvect(i,2);
+            mdist = sqrt((x-xc)^2 + (y-yc)^2); 
+            if mdist > maxdist
+                maxdist = mdist;
+            end
+        end
+ 
+    else
+        maxdist = 0;
+    end
     spkamp_coord(1,c) = mean(cns4.eventheight(k,:));
     spkamp_coord(2,c) = Nunits;
+    spkamp_coord(3,c) = maxdist; 
     c = c + 1;
 end
+%%
+varnames = {'Event Amplitude','Number of synchronous units','Max distance to centroid'};
+c = 1;
+for k = 1:3
+    a = spkamp_coord(k,:);
+    for j = 1:3
+        b = spkamp_coord(j,:);
+        if k~=j
+            subplot(2,3,c), hold on
+            s = scatter(a,b,3,cmap(k,:),'filled'); hold on
+            s.MarkerFaceAlpha = 1;
+            s.MarkerEdgeColor = cmap(k,:);
+            s.MarkerEdgeAlpha = 0.5;
+            xlabel(varnames{k})
+            ylabel(varnames{j})
+            c = c+1;
+        end
+    end
+end
+
+subplot(3,3,7)
+            
+x = spkamp_coord(2,:); %Nunits sharing the spike  
+y = spkamp_coord(1,:);
+z = spkamp_coord(3,:); 
+
+zz = find(x==0);
+x(zz(1:end-1)) = [];
+y(zz(1:end-1)) = [];
+z(zz(1:end-1)) = [];
+
+s = scatter3(x,y,z,3,cmap(1,:),'filled'); 
+s.MarkerFaceAlpha = 1;
+s.MarkerEdgeColor = cmap(1,:);
+s.MarkerEdgeAlpha = 0.5;
+xlabel('Number of synchronous cells')
+ylabel('Event amplitude (\Delta F/ F)')
+zlabel('Maximum distance between synchronous cells')
 %%
 subplot(1,2,1)
 x = spkamp_coord(2,:); %Nunits sharing the spike  
@@ -1225,11 +1287,11 @@ suptitle('Probability distributions')
 %%
 
 clear cl
-cl.K = 3;
+cl.K = 5;
 cl.runs = 2500 ;
 cl.spatialplot = 1;
 cl.frame_path = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template.tif';
-cl.normalise = 1;
+cl.normalise = 0;
 cl.p = 0.8;
 cl.Z = 5;
 cl.Nmin = 3;

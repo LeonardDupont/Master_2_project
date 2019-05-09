@@ -226,7 +226,7 @@ for roi = 1:N
             for s = 1:nseg
                 angle = angles(s);
                 [x,y] = get_position(angle,geometry_enlarged);
-                scatter(y,x,'filled','w'), hold on
+                %scatter(y,x,'filled','w'), hold on
             end
             ims = imagesc(ax,np_mask_seg);
             uistack(ims,'bottom')

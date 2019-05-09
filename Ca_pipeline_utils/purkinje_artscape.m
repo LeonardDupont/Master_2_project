@@ -3,10 +3,10 @@ function [] = purkinje_artscape(masks,rois)
 if nargin < 2
     N = length(masks);
     rois = linspace(1,N,N);
-    cmap = pink(2*N);
+    cmap = jet(2*N);
 else
     N = length(rois);
-    cmap = pink(2*N);
+    cmap = jet(2*N);
 end
 
 S = size(masks{1,1});
