@@ -4,7 +4,7 @@ function [medfilt_data] = med_filter_calcium(input)
 %using a 5-frame window. MEDFILT is added to the file name at the end. 
 
 
-data = imread_tifflib(input); 
+data = bigread2(input); 
 data = double(data); 
 medfilt_data = medfilt1(data,5,[],3); 
 
