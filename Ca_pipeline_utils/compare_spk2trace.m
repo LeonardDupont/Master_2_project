@@ -12,23 +12,24 @@ if dm
 else
     cnintensity = cn.intensity;
 end
-cmap = pink(4*N); 
+
+
 for k = 1:N
     figure, hold on
     set(gcf, 'Position',  [100, 500, 1000, 200])
     trace = cnintensity(:,rois(k)).';
     trace = zero_and_max(trace);
-    ylim([0.6,max(trace + offset)+0.1])
+    ylim([0.9,max(trace + offset)+0.1])
     xlim([0,length(trace)])
-    plot(trace + offset,'color',cmap(k+N,:),'LineWidth',1.2), hold on
+    plot(trace + offset,'color','k'), hold on
     
     spikes = cn.spikes(:,rois(k)).'; 
     spktimes = find(spikes==1); 
     Nspk = length(spktimes);
     for i = 1:Nspk
         x = [spktimes(i),spktimes(i)];
-        y = [0.9,1];
-        plot(x,y,'color',cmap(k+N,:),'LineWidth',1.2), hold on
+        y = [0.95,1];
+        plot(x,y,'color','k','LineWidth',1), hold on
     end
     title(['Cell ',num2str(rois(k))]); 
     
