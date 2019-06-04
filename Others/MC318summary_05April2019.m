@@ -101,12 +101,12 @@ for i = 1:nrois
     subplot(4,3,1)
     
         S = sizes2;
-        white = categ(3,zeros(S),zeros(S),zeros(S)); 
+        white = cat(3,zeros(S),zeros(S),zeros(S)); 
         h = imshow(white); hold on 
         art = S2(i);  
         I = cns2s.mask{1,art};
         c = cmap(i,:);
-        full = categ(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
+        full = cat(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
         h = imshow(full); hold on 
         set(h, 'AlphaData', I) , hold off 
         title('Session 2')
@@ -114,12 +114,12 @@ for i = 1:nrois
     subplot(4,3,2)
     
         S = sizes4;
-        white = categ(3,zeros(S),zeros(S),zeros(S)); 
+        white = cat(3,zeros(S),zeros(S),zeros(S)); 
         h = imshow(white); hold on 
         art = S4(i);  
         I = cns4s.mask{1,art};
         c = cmap(i,:);
-        full = categ(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
+        full = cat(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
         h = imshow(full); hold on 
         set(h, 'AlphaData', I) , hold off 
         title('Session 4')
@@ -128,12 +128,12 @@ for i = 1:nrois
     subplot(4,3,3)
     
         S = sizes5;
-        white = categ(3,zeros(S),zeros(S),zeros(S)); 
+        white = cat(3,zeros(S),zeros(S),zeros(S)); 
         h = imshow(white); hold on 
         art = S5(i);  
         I = cns5s.mask{1,art};
         c = cmap(i,:);
-        full = categ(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
+        full = cat(3,ones(S)*c(1),ones(S)*c(2),ones(S)*c(3)); 
         h = imshow(full); hold on 
         set(h, 'AlphaData', I) , hold off 
         title('Session 5') 
@@ -152,7 +152,7 @@ for i = 1:nrois
         u = fill(x,y,cmap(i,:));
         u.FaceAlpha = 0.15;
         u.EdgeColor = 'none'; hold on
-        ylim([-0.2,max(zero_and_max(cns2s.intensity(1:pt_max,S2(i)).'))+0.1])
+        ylim([-0.2,1])
         spikes = cns2s.spikes(1:pt_max,S2(i)).'; 
         spktimes = find(spikes==1); 
         Nspk = length(spktimes);
@@ -172,7 +172,7 @@ for i = 1:nrois
         u = fill(x,y,cmap(i,:));
         u.FaceAlpha = 0.15;
         u.EdgeColor = 'none'; hold on
-        ylim([-0.2,max(zero_and_max(cns4s.intensity(1:pt_max,S4(i)).'))+0.1])
+        ylim([-0.2,1])
         spikes = cns4s.spikes(1:pt_max,S4(i)).'; 
         spktimes = find(spikes==1); 
         Nspk = length(spktimes);
@@ -191,7 +191,7 @@ for i = 1:nrois
         u = fill(x,y,cmap(i,:));
         u.FaceAlpha = 0.15;
         u.EdgeColor = 'none';
-        ylim([-0.2,max(zero_and_max(cns5s.intensity(1:pt_max,S5(i)).'))+0.1])
+        ylim([-0.2,1])
         spikes = cns5s.spikes(1:pt_max,S5(i)).'; 
         spktimes = find(spikes==1); 
         Nspk = length(spktimes);
@@ -216,7 +216,7 @@ for i = 1:nrois
     subplot(4,3,7)
         data = zero_and_max(cns2s.intensity.').'; 
         plot(data(tstrt:tstp,S2(i)), 'color',cmap(i,:)), axis tight,  hold on
-        u = fill([1 1 500 500],[-0.2, max(data(tstrt:tstp,S2(i)))+0.1, max(data(tstrt:tstp,S2(i)))+0.1, -0.2],cmap(i,:));
+        u = fill([1 1 500 500],[-0.2, 1, 1, -0.2],cmap(i,:));
         u.FaceAlpha = 0.15;
         u.EdgeColor = 'none';
         spikes = cns2s.spikes(tstrt:tstp,S2(i)).'; 
@@ -227,6 +227,7 @@ for i = 1:nrois
             ys = [-0.15,-0.05];
             plot(xs,ys,'color','k'), hold on
         end
+        ylim([-0.2,1])
         xticks(timeticks)
         xticklabels(xlabels)
         xlabel('Time (s)')
@@ -235,7 +236,7 @@ for i = 1:nrois
     subplot(4,3,8)
         data = zero_and_max(cns4s.intensity.').';
         plot(data(tstrt:tstp,S4(i)), 'color',cmap(i,:)), axis tight,  hold on
-        u = fill([1 1 500 500],[-0.2, max(data(tstrt:tstp,S4(i)))+0.1, max(data(tstrt:tstp,S4(i)))+0.1, -0.2],cmap(i,:));
+        u = fill([1 1 500 500],[-0.2, 1, 1, -0.2],cmap(i,:));
         u.FaceAlpha = 0.15;
         u.EdgeColor = 'none';
         spikes = cns4s.spikes(tstrt:tstp,S4(i)).'; 
@@ -246,13 +247,14 @@ for i = 1:nrois
             ys = [-0.15,-0.05];
             plot(xs,ys,'color','k'), hold on
         end
+        ylim([-0.2,1])
         xticks(timeticks)
         xticklabels(xlabels)
         xlabel('Time (s)')
     subplot(4,3,9)
         data = zero_and_max(cns5s.intensity.').';
         plot(data(tstrt:tstp,S5(i)), 'color',cmap(i,:)), axis tight, hold on
-        u = fill([1 1 500 500],[-0.2, max(data(tstrt:tstp,S5(i)))+0.1, max(data(tstrt:tstp,S5(i)))+0.1, -0.2],cmap(i,:));
+        u = fill([1 1 500 500],[-0.2, 1, 1, -0.2],cmap(i,:));
         u.FaceAlpha = 0.15;
         u.EdgeColor = 'none';
         spikes = cns5s.spikes(tstrt:tstp,S5(i)).'; 
@@ -263,6 +265,7 @@ for i = 1:nrois
             ys = [-0.15,-0.05];
             plot(xs,ys,'color','k'), hold on
         end
+        ylim([-0.2,1])
         xticks(timeticks)
         xticklabels(xlabels)
         xlabel('Time (s)')
