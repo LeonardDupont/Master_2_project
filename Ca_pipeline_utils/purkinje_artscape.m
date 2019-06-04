@@ -10,8 +10,8 @@ else
 end
 
 S = size(masks{1,1});
-%bkg = cat(3,zeros(S),zeros(S),zeros(S)); %black
-bkg = cat(3,ones(S),ones(S),ones(S)); %white
+bkg = cat(3,zeros(S),zeros(S),zeros(S)); %black
+%bkg = cat(3,ones(S),ones(S),ones(S)); %white
 h = imshow(bkg); hold on 
 
 for r = 1:N 

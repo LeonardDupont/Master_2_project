@@ -228,6 +228,7 @@ for roi = 1:N
                 [x,y] = get_position(angle,geometry_enlarged);
                 %scatter(y,x,'filled','w'), hold on
             end
+            colormap('hot')
             ims = imagesc(ax,np_mask_seg);
             uistack(ims,'bottom')
         end

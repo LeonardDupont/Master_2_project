@@ -5,8 +5,8 @@ function [PMI] = point_mutual_info(var1,ncats1,var2,ncats2,varargin)
 % number of spatial bins ncats1 - ncats2. It then creates ncats categories
 % for each variable (respectively) and assigns each datapoint to one of
 % them. The programme then outputs a pointwise mutual-information matrix 
-% and displays it. If vectors are of different  sizes, the longest one is 
-% downsampled before category assignement.  
+% and displays it. If vectors are of different  sizes, the shortest one is
+% oversampled to match the length of the other. 
 % .........................................................................
 %
 % - - - - - INPUT - - - - - - - - -
@@ -41,6 +41,31 @@ parse(ip,varargin{:});
 withlog = logical(ip.Results.withlog);
 showmat = logical(ip.Results.showmat);
 
+%% If input vectors have different lengths, then we match the size
+
+L1 = length(var1);
+L2 = length(var2);
+
+if L1 > L2
+    
+    q1 = linspace(0,L1,L1);
+    q2 = linspace(0,L2,L2);
+    var2 = interp1(q2,var2,q1);
+    clear q1, clear q2
+    
+elseif L2 > L1
+    
+    q1 = linspace(0,L1,L1);
+    q2 = linspace(0,L2,L2);
+    var1 = interp1(q1,var1,q2);
+    clear q1, clear q2
+    
+end
+
+L = length(var1);
+clear L1, clear L2
+
+
 %% Finding category boundaries for each 1D vector based on (ncats)  
 % ------- var1 --------
 max1 = max(var1);
@@ -60,41 +85,6 @@ for j = 1:ncats2
     cats2(j) = j*dcat + min2;
 end
 
-%% If input vectors have different lengths, then we match the size
-
-L1 = length(var1);
-L2 = length(var2);
-
-if L1 > L2
-    
-   mergeF = floor(L1/L2);
-   aside = rem(L1,L2);
-   var1bis = zeros(L2,1);
-   for k = 1:L2
-       start = (k-1)*mergeF + 1;
-       stop = k*mergeF + (k==mergeF)*aside;
-       var1bis(k) = mean(var1(start:stop));
-   end
-   var1 = var1bis;
-   clear var1bis
-   
-elseif L2 > L1
-    
-   mergeF = floor(L2/L1);
-   aside = rem(L2,L1);
-   var2bis = zeros(L1,1);
-   for k = 1:L1
-       start = (k-1)*mergeF + 1;
-       stop = k*mergeF + (k==mergeF)*aside;
-       var2bis(k) = mean(var2(start:stop));
-   end    
-   var2 = var2bis;
-   clear var2bis;
-   
-end
-
-L = length(var1);
-clear L1, clear L2
 
 %% Assigning labels to each data point of the vectors
 % At the end of this part, we have two 1D vectors of size L where label(i)
@@ -148,9 +138,8 @@ for k = 1:ncats1
 end
 
 if showmat
-    figure, colormap('Parula'), imagesc(PMI), colorbar 
-    ylabel('var1')
-    xlabel('var2') 
+    plPMI = PMI / max(PMI(:));
+    colormap('parula'), imagesc(plPMI)
     box off 
 end
 
