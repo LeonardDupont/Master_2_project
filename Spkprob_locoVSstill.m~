@@ -820,14 +820,12 @@ for k = 1:length(xcacc)-1
     
     for i = 1:dt
         coact = length(find(cnf.spikes(whereon + i - 1,:)==1)); 
-        if coact > 10
-            if acclbl == 3
-                synchacc = cat(1,synchacc,coact); 
-            elseif acclbl == 1
-                synchdec = cat(1,synchdec,coact);
-            else 
-                synchground = cat(1,synchground,coact);
-            end
+        if acclbl == 3
+            synchacc = cat(1,synchacc,coact); 
+        elseif acclbl == 1
+            synchdec = cat(1,synchdec,coact);
+        else 
+            synchground = cat(1,synchground,coact);
         end
     end
 end
@@ -846,13 +844,12 @@ figure, hold on
 b = bar([macc,mdec,mgr]);
 b.FaceColor = 'flat';
 b.FaceAlpha = 0.7;
-b.CData(1,:) = [0.9216    0.2000    0.1373];
-b.CData(2,:) = [0.4588    1.0157    0.2980];
-b.CData(3,:) = [0    0.1098    0.9608]; 
+b.CData(1,:) = [0.8 0.2 0];
+b.CData(2,:) = [0 0.3 0.9];
+b.CData(3,:) = [0.8 0.8 0.8]; 
 errorbar([macc,mdec,mgr],[eacc,edec,egr],'LineStyle','none','Color','k')
 xticks([1 2 3])
 xticklabels({'Acceleration','Deceleration','Constant'})
 xlabel('Regime')
 ylabel('Mean number of coactivated cells')
-yticks([2 6 10 14])
-box off 
+

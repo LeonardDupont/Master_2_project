@@ -1153,14 +1153,8 @@ for k = 1:4
 
 end
 %%
-pw_strides = [161,85,176,102];
-b = bar(pw_strides);
-b.FaceColor = 'flat';
+pw_strides = 
 for k = 1:4
-    b.CData(k,:) = paw_colors(k,:);
+    is_strides = isolated_strides.([paw_dictionary{k},'_paw']).isolated; 
+    [Nstr,~] = length(is_strides)
 end
-b.FaceAlpha = 0.7;
-box off 
-xlabel('Paws')
-xticklabels(paw_dictionary)
-ylabel('Number of strides')

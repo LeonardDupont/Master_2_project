@@ -1290,7 +1290,7 @@ suptitle('Probability distributions')
 %%
 
 clear cl
-cl.K = 5;
+cl.K = 4;
 cl.runs = 2500 ;
 cl.spatialplot = 1;
 cl.frame_path = '/Users/leonarddupont/Desktop/M2_internship/Code_annex/registration_template.tif';
@@ -1301,7 +1301,7 @@ cl.Nmin = 3;
 cl.Nmax = 10; 
 
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-activity_clustersK4 = hybrid_clusteringDB(cns4,cl);
+activity_clustersK4 = hybrid_clusteringDB(cnf,cl);
 % . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
 %%
