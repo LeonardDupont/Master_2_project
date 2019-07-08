@@ -243,8 +243,23 @@ for k = 1:l
     box off 
 end
 
-
-
+%% With the first bissectrix
+figure, hold on
+x = linspace(0,0.1,100);
+plot(x,x,'Color',[0.8 0.8 0.8])
+for k = 1:cnf.n_cells
+    scatter(Pspkrest(k),Pspkloco(k),15,[0 0 0],'filled'), hold on
+end
+axis tight
+xlim([0 0.1])
+ylim([0 0.1])
+box off
+xlabel('CS probability at rest')
+ylabel('CS probability when moving')
+xticks([0 0.02 0.04 0.06 0.08 0.1])
+xticklabels({'0','','','','',0.1})
+yticks([0 0.02 0.04 0.06 0.08 0.1])
+yticklabels({'0','','','','',0.1})
 
 %% Acceleration, decceleration and constant speed
 % Here we define three acceleration regimes and see how these relate to
@@ -795,64 +810,117 @@ title('Corrcoefs 3 clusters')
 
 %% Synchrony in different acceleration states
 
-synchacc = [];
-synchdec = [];
-synchground = [];
+Nspkcells = zeros(3,cnf.n_cells);
+Nbigcoact = zeros(3,cnf.n_cells);
+synchregimes = zeros(3,cnf.n_cells); 
 
-for k = 1:length(xcacc)-1
-    xminus = xcacc(k);
-    xplus = xcacc(k+1);
-    acclbl = acclabels(xplus-1);
-%     
-%     tmon = ttime(xminus);
-%     tmoff = ttime(xplus);
-%    closeon = abs(im4.time-tmon);
-%    closeoff = abs(im4.time-tmoff);
-     
-%     whereon = find(closeon == min(closeon));
-%     whereoff = find(closeoff == min(closeoff));
-    whereon = ceil(xminus/100);
-    whereoff = floor((xplus-1)/100);
-%     whereon = whereon(1);
-%     whereoff = whereoff(1);
-    where(k) = whereon;
-    dt = whereoff - whereon + 1;
-    
-    for i = 1:dt
-        coact = length(find(cnf.spikes(whereon + i - 1,:)==1)); 
-        if coact > 10
-            if acclbl == 3
-                synchacc = cat(1,synchacc,coact); 
-            elseif acclbl == 1
-                synchdec = cat(1,synchdec,coact);
-            else 
-                synchground = cat(1,synchground,coact);
-            end
+figure, hold on
+xposi = [2 6 10 14 18 22];
+xbars = [1 2 3 ; 5 6 7 ; 9 10 11 ; 13 14 15 ; 17 18 19 ; 21 22 23];
+xnames = {'1-10','10-20','20-30','30-40','50-60','>60'};
+probchecks = [1 10 ; 10 20 ; 20 30 ;  30 40 ; 50 60 ; 60 170];
+[l,~] = size(probchecks); 
+for u = 1:l
+    synchregimes = zeros(3,cnf.n_cells); 
+    for k = 1:length(xcacc)-1
+        
+        xminus = xcacc(k);
+        xplus = xcacc(k+1);
+        acclbl = acclabels(xplus-1);
+
+        whereon = round(xminus/100)+1;
+        whereoff = round((xplus)/100);
+
+        for j = 1:cnf.n_cells
+                cellspk = find(cnf.spikes(whereon:whereoff,j)==1); 
+                Nspkcells(acclbl,j) = Nspkcells(acclbl,j) + length(cellspk);
+                for cc = 1:length(cellspk)
+                    coact = length(find(cnf.spikes(whereon + cellspk(cc) - 1,:) == 1));
+                    if coact > probchecks(u,1) && coact < probchecks(u,2)
+                        synchregimes(acclbl,j) = synchregimes(acclbl,j) + 1;
+                    end
+                end
+        end
+
+    end
+
+    for k = 1:cnf.n_cells
+        for i = 1:3
+        synchregimes(i,k) = synchregimes(i,k)/Nspkcells(i,k);
         end
     end
+    
+    Ncoacc = mean(synchregimes(3,:));
+    Ncogr = mean(synchregimes(2,:));
+    Ncodec = mean(synchregimes(1,:));
+    Nco = [Ncodec, Ncogr, Ncoacc]; 
+    Ncoincert = 2*[std(synchregimes(1,:))/sqrt(cnf.n_cells),std(synchregimes(2,:))/sqrt(cnf.n_cells),std(synchregimes(3,:))/sqrt(cnf.n_cells)]; 
+
+    b = bar(xbars(u,:),Nco); hold on
+    b.FaceColor = 'flat';
+    b.FaceAlpha = 0.7;
+    b.CData(3,:) = [0.9216    0.2000    0.1373];
+    b.CData(1,:) = [0.4588    1.0157    0.2980];
+    b.CData(2,:) = [0    0.1098    0.9608]; 
+    errorbar(xbars(u,:),Nco,Ncoincert,'LineStyle','none','Color','k')
 end
 
 
-macc = mean(synchacc);
-eacc = 2*std(synchacc)/sqrt(length(synchacc));
+xticks(xposi)
+xticklabels(xnames)
+set(gca,'TickLength',[0, 0.05])
+xlabel('Number of synchronous dendrites')
+ylabel('Probability')
+box off
 
-mdec = mean(synchdec);
-edec = 2*std(synchdec)/sqrt(length(synchdec));
-
-mgr = mean(synchground);
-egr = 2*std(synchground)/sqrt(length(synchground));
+Nspkcells(3,:) = Nspkcells(3,:)*100/length(find(acclabels == 3)); 
+Nspkcells(2,:) = Nspkcells(2,:)*100/length(find(acclabels == 2)); 
+Nspkcells(1,:) = Nspkcells(1,:)*100/length(find(acclabels == 1)); 
+% number of spikes in different conditions
+Nspkacc = mean(Nspkcells(3,:));
+Nspkgr = mean(Nspkcells(2,:));
+Nspkdec = mean(Nspkcells(1,:));
+Nspkincert = 2*[std(Nspkcells(1,:))/sqrt(cnf.n_cells), std(Nspkcells(2,:))/sqrt(cnf.n_cells),std(Nspkcells(3,:))/sqrt(cnf.n_cells)];
 
 figure, hold on
-b = bar([macc,mdec,mgr]);
+b = bar([Nspkdec,Nspkgr,Nspkdec]);
 b.FaceColor = 'flat';
 b.FaceAlpha = 0.7;
-b.CData(1,:) = [0.9216    0.2000    0.1373];
-b.CData(2,:) = [0.4588    1.0157    0.2980];
-b.CData(3,:) = [0    0.1098    0.9608]; 
-errorbar([macc,mdec,mgr],[eacc,edec,egr],'LineStyle','none','Color','k')
+b.CData(3,:) = [0.9216    0.2000    0.1373];
+b.CData(1,:) = [0.4588    1.0157    0.2980];
+b.CData(2,:) = [0    0.1098    0.9608]; 
+errorbar([Nspkdec,Nspkgr,Nspkdec],Nspkincert,'LineStyle','none','Color','k')
 xticks([1 2 3])
-xticklabels({'Acceleration','Deceleration','Constant'})
+xticklabels({'Deceleration','Constant','Acceleration'})
 xlabel('Regime')
-ylabel('Mean number of coactivated cells')
-yticks([2 6 10 14])
+ylabel('Number of spikes')
 box off 
+
+% mean number of coactivated cells 
+
+Ncoacc = mean(Nbigcoact(3,:));
+Ncogr = mean(Nbigcoact(2,:));
+Ncodec = mean(Nbigcoact(1,:));
+Nco = [Ncodec, Ncogr, Ncoacc]; 
+Ncoincert = 2*[std(Nbigcoact(1,:))/sqrt(cnf.n_cells),std(Nbigcoact(2,:))/sqrt(cnf.n_cells),std(Nbigcoact(3,:))/sqrt(cnf.n_cells)]; 
+
+figure, hold on
+b = bar(Nco);
+b.FaceColor = 'flat';
+b.FaceAlpha = 0.7;
+b.CData(3,:) = [0.9216    0.2000    0.1373];
+b.CData(1,:) = [0.4588    1.0157    0.2980];
+b.CData(2,:) = [0    0.1098    0.9608]; 
+errorbar(Nco,Ncoincert,'LineStyle','none','Color','k')
+xticks([1 2 3])
+xticklabels({'Deceleration','Constant','Acceleration'})
+xlabel('Regime')
+ylabel('Mean number of coactivated neighbours')
+box off 
+
+
+%%
+
+
+
+
